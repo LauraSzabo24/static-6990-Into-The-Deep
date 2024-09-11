@@ -1,18 +1,24 @@
-//weird
-
-package org.firstinspires.ftc.teamcode.drive;
+package RelicsFromCenterstageGame.TeleOp.Tetris;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.util.Angle;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDriveCancelable;
+
 import RelicsFromCenterstageGame.Auto.Mailbox;
 
 /**
+ * This opmode demonstrates how one can augment driver control by following Road Runner arbitrary
+ * Road Runner trajectories at any time during teleop. This really isn't recommended at all. This is
+ * not what Trajectories are meant for. A path follower is more suited for this scenario. This
+ * sample primarily serves as a demo showcasing Road Runner's capabilities.
+ * <p>
  * This bot starts in driver controlled mode by default. The player is able to drive the bot around
  * like any teleop opmode. However, if one of the select buttons are pressed, the bot will switch
  * to automatic control and run to specified location on its own.
@@ -34,8 +40,9 @@ import RelicsFromCenterstageGame.Auto.Mailbox;
  * This sample utilizes the SampleMecanumDriveCancelable.java and TrajectorySequenceRunnerCancelable.java
  * classes. Please ensure that these files are copied into your own project.
  */
-@TeleOp
-public class TeleOpAugmentedDriving extends LinearOpMode {
+@TeleOp(group = "advanced")
+@Disabled
+public class TestAutoTele extends LinearOpMode {
     // Define 2 states, drive control or automatic control
     enum Mode {
         DRIVER_CONTROL,
@@ -45,7 +52,7 @@ public class TeleOpAugmentedDriving extends LinearOpMode {
     Mode currentMode = Mode.DRIVER_CONTROL;
 
     // The coordinates we want the bot to automatically go to when we press the A button
-    Vector2d targetAVector = new Vector2d(45, 45);
+    Vector2d targetAVector = new Vector2d(0, 15);
     // The heading we want the bot to end on for targetA
     double targetAHeading = Math.toRadians(90);
 
@@ -57,7 +64,6 @@ public class TeleOpAugmentedDriving extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-
         // Initialize custom cancelable SampleMecanumDrive class
         // Ensure that the contents are copied over from https://github.com/NoahBres/road-runner-quickstart/blob/advanced-examples/TeamCode/src/main/java/org/firstinspires/ftc/teamcode/drive/advanced/SampleMecanumDriveCancelable.java
         // and https://github.com/NoahBres/road-runner-quickstart/blob/advanced-examples/TeamCode/src/main/java/org/firstinspires/ftc/teamcode/drive/advanced/TrajectorySequenceRunnerCancelable.java

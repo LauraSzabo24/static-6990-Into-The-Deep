@@ -51,7 +51,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import Auto.Mailbox;
+import RelicsFromCenterstageGame.Auto.Mailbox;
 
 /*
  * Simple mecanum drive hardware implementation for REV hardware.

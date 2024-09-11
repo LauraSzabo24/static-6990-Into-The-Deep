@@ -48,7 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import Auto.Mailbox;
+import RelicsFromCenterstageGame.Auto.Mailbox;
 
 /*
  * Trajectory-cancelable version of the simple mecanum drive hardware implementation for REV hardware.
