@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import RelicsFromCenterstageGame.Auto.Mailbox;
+import Autonomous.Mailbox;
 
 //copied last 11/7/2023 12:47 am
 

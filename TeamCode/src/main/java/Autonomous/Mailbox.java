@@ -1,4 +1,4 @@
-package RelicsFromCenterstageGame.Auto;
+package Autonomous;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 

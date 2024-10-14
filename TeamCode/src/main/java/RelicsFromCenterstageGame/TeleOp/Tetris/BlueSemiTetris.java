@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.drive.MecanumDrives.NewMecanumDrive;
 
-import RelicsFromCenterstageGame.Auto.Mailbox;
+import Autonomous.Mailbox;
 
 @TeleOp
 public class BlueSemiTetris extends LinearOpMode {

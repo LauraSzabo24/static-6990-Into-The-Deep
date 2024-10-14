@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-import RelicsFromCenterstageGame.Auto.Mailbox;
+import Autonomous.Mailbox;
 
 /**
  * This bot starts in driver controlled mode by default. The player is able to drive the bot around

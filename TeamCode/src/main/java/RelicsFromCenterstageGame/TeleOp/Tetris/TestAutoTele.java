@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDriveCancelable;
 
-import RelicsFromCenterstageGame.Auto.Mailbox;
+import Autonomous.Mailbox;
 
 /**
  * This opmode demonstrates how one can augment driver control by following Road Runner arbitrary
