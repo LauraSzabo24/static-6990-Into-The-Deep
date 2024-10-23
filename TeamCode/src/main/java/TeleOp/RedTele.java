@@ -19,7 +19,7 @@ import Autonomous.Mailbox;
 public class RedTele extends LinearOpMode {
 
     //region EXTENDER PID
-    ElapsedTime extTimer = new ElapsedTime();
+    ElapsedTime timer = new ElapsedTime();
     private double extError = 0;
     private double extISum = 0;
     public static double extP = 0.01;
@@ -28,7 +28,6 @@ public class RedTele extends LinearOpMode {
     //endregion
 
     //region FLIPPER PID
-    ElapsedTime flpTimer = new ElapsedTime();
     private double flpError = 0;
     private double flpISum = 0;
     public static double flpP = 0.01;
@@ -293,9 +292,11 @@ public class RedTele extends LinearOpMode {
 
     public void extPID()
     {
+        double pidval = (extP * timer.seconds()) + (extISum/timer.seconds()) + (extD*(extError-);
 
+        timer.reset();
     }
-    public void flpPID()
+    public void flpPID() //bang bang?
     {
 
     }
