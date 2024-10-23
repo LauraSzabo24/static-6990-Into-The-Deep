@@ -23,16 +23,18 @@ public class RedTele extends LinearOpMode {
     private double extError = 0;
     private double extISum = 0;
     public static double extP = 0.01;
+    public static double extI = 0.00;
     public static double extD = 0.0;
-    public static double extTarget = 5000;
+    public static int extTarget = 5000;
     //endregion
 
     //region FLIPPER PID
     private double flpError = 0;
     private double flpISum = 0;
     public static double flpP = 0.01;
+    public static double flpI = 0.00;
     public static double flpD = 0.0;
-    public static double flpTarget = 5000;
+    public static int flpTarget = 5000;
     //endregion
 
     //region DRIVER A MATERIAL
@@ -79,6 +81,7 @@ public class RedTele extends LinearOpMode {
 
     public void hardwareInit()
     {
+        /*
         //arm motors
         flipMotor = hardwareMap.get(DcMotorEx.class, "flip");
         flipMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -102,7 +105,7 @@ public class RedTele extends LinearOpMode {
         wristRServo = hardwareMap.get(Servo.class, "wristR");
         spinnerServo = hardwareMap.get(Servo.class, "spinner");
         clawLServo = hardwareMap.get(Servo.class, "clawL");
-        clawRServo = hardwareMap.get(Servo.class, "clawR");
+        clawRServo = hardwareMap.get(Servo.class, "clawR");*/
 
         //gamepads
         currG1 = new Gamepad();
@@ -110,13 +113,14 @@ public class RedTele extends LinearOpMode {
         currG2 = new Gamepad();
         oldG2 = new Gamepad();
 
+        /*
         //mailbox
         Mailbox mail =  new Mailbox();
         imu = hardwareMap.get(IMU.class, "imu");
         parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
-        imu.initialize(parameters);
+        imu.initialize(parameters);*/
     }
     @Override
     public void runOpMode() throws InterruptedException
@@ -141,22 +145,25 @@ public class RedTele extends LinearOpMode {
         currG1.copy(gamepad1);
         currG2.copy(gamepad2);
         telemetry.update();
-        drive.update();
-        poseEstimate = new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading());
+        //drive.update();
+       // poseEstimate = new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading());
 
         //CONTROLS
         switch(gameModeA){
             case UNLIMITED:
-                driverAControls();
+                //driverAControls();
                 break;
             case LIMITED:
                 break;
         }
         driverBControls();
 
-        //EXTENDER & FLIPPER
-        extPID();
-        flpPID();
+        telemetry.addData("GAMEMODE B", gameModeB);
+        telemetry.addData("GAMEMODE A", gameModeA);
+
+        //EXTENDER & FLIPPER PIDS
+        //armMotor.setPower(extPID(extTarget, armMotor.getCurrentPosition()));
+        //flipMotor.setPower(flpPID(flpTarget, flipMotor.getCurrentPosition()));
     }
     public void driverAControls()
     {
@@ -190,53 +197,54 @@ public class RedTele extends LinearOpMode {
     }
     public void driverBControls()
     {
-        //AUTO POSES
+        //PRESET POSES
         if(gameModeB!= controlStateB.HIGH && currG2.y && !oldG2.y)
         {
             telemetry.addLine("TO HIGH POSITION");
             gameModeB = controlStateB.HIGH;
 
-            wristLServo.setPosition(0);
+            /*wristLServo.setPosition(0);
             wristRServo.setPosition(0);
             spinnerServo.setPosition(0);
             flpTarget = 0;
-            extTarget = 0;
+            extTarget = 0;*/
         }
         else if(gameModeB!= controlStateB.LOW && currG2.x && !oldG2.x)
         {
             telemetry.addLine("TO LOW POSITION");
             gameModeB = controlStateB.LOW;
 
-            wristLServo.setPosition(0);
+            /*wristLServo.setPosition(0);
             wristRServo.setPosition(0);
             spinnerServo.setPosition(0);
             flpTarget = 0;
-            extTarget = 0;
+            extTarget = 0;*/
         }
         else if(gameModeB!= controlStateB.PICKUP && currG2.a && !oldG2.a)
         {
             telemetry.addLine("TO PICKUP POSITION");
             gameModeB = controlStateB.PICKUP;
 
-            wristLServo.setPosition(0);
+            /*wristLServo.setPosition(0);
             wristRServo.setPosition(0);
             spinnerServo.setPosition(0);
             flpTarget = 0;
-            extTarget = 0;
+            extTarget = 0;*/
         }
 
         //CLAW
         if (currG2.b && !oldG2.b)
         {
-            telemetry.addLine("CLAW TOGGLE");
             if(clawIH)
             {
-                clawLServo.setPosition(0.5);
-                clawRServo.setPosition(0.5);
+                telemetry.addLine("CLAW OPEN");
+                /*clawLServo.setPosition(0.5);
+                clawRServo.setPosition(0.5);*/
             }
             else {
-                clawLServo.setPosition(0);
-                clawRServo.setPosition(0);
+                telemetry.addLine("CLAW CLOSE");
+                /*clawLServo.setPosition(0);
+                clawRServo.setPosition(0);*/
             }
             clawIH = !clawIH;
         }
@@ -245,7 +253,7 @@ public class RedTele extends LinearOpMode {
         if(currG2.right_bumper && !oldG2.right_bumper)
         {
             telemetry.addLine("JERK");
-            wristLServo.setPosition(wristLServo.getPosition()+0.1);
+            /*wristLServo.setPosition(wristLServo.getPosition()+0.1);
             wristRServo.setPosition(wristRServo.getPosition()+0.1);
             extTarget = extTarget-10;
             flpTarget = flpTarget-10;
@@ -253,52 +261,68 @@ public class RedTele extends LinearOpMode {
             wristLServo.setPosition(wristLServo.getPosition()-0.1);
             wristRServo.setPosition(wristRServo.getPosition()-0.1);
             extTarget = extTarget+10;
-            flpTarget = flpTarget+10;
+            flpTarget = flpTarget+10;*/
         }
 
         //WRIST
         if(currG2.left_stick_y>0 || currG2.left_stick_y<0)
         {
-            wristRServo.setPosition(wristRServo.getPosition() + (currG2.left_stick_y * 0.5));
-            wristLServo.setPosition(wristRServo.getPosition() + (currG2.left_stick_y * 0.5));
+            telemetry.addLine("WRIST MOVEMENT");
+            /*wristRServo.setPosition(wristRServo.getPosition() + (currG2.left_stick_y * 0.5));
+            wristLServo.setPosition(wristRServo.getPosition() + (currG2.left_stick_y * 0.5));*/
             gameModeB = controlStateB.FREE;
         }
 
         //SPINNER
         if(currG2.right_stick_x>0 || currG2.right_stick_x<0)
         {
-            spinnerServo.setPosition(spinnerServo.getPosition() + (currG2.right_stick_x * 0.5));
+            telemetry.addLine("SPINNER MOVEMENT");
+           // spinnerServo.setPosition(spinnerServo.getPosition() + (currG2.right_stick_x * 0.5));
             gameModeB = controlStateB.FREE;
         }
 
         //EXTENDER & FLIPPER
         if(currG2.dpad_up && extTarget<(5000-100))
         {
+            telemetry.addLine("ext UP");
             extTarget+=100;
         }
         else if(currG2.dpad_down && extTarget>(0+100))
         {
+            telemetry.addLine("ext DOWN");
             extTarget-=100;
         }
         else if(currG2.dpad_left && flpTarget<(5000-100))
         {
+            telemetry.addLine("flp UP");
             flpTarget+=100;
         }
         else if(currG2.dpad_right && flpTarget>(0+100))
         {
+            telemetry.addLine("flp DOWN");
             flpTarget-=100;
         }
     }
 
-    public void extPID()
+    public double extPID(int target, int state)
     {
-        double pidval = (extP * timer.seconds()) + (extISum/timer.seconds()) + (extD*(extError-);
+        int currError = target - state;
+        extISum += currError * timer.seconds();
+        double deriv = (currError - extError)/timer.seconds();
+        extError = currError;
 
         timer.reset();
+        return ((extP * currError) + (extI * extISum) + (extD*deriv));
     }
-    public void flpPID() //bang bang?
+    public double flpPID(int target, int state)
     {
+        int currError = target - state;
+        flpISum += currError * timer.seconds();
+        double deriv = (currError - flpError)/timer.seconds();
+        flpError = currError;
 
+        timer.reset();
+        return ((flpP * currError) + (flpI * flpISum) + (flpD*deriv));
     }
 
 }
