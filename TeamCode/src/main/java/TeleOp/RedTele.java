@@ -160,6 +160,7 @@ public class RedTele extends LinearOpMode {
 
         telemetry.addData("GAMEMODE B", gameModeB);
         telemetry.addData("GAMEMODE A", gameModeA);
+        stateCheck();
 
         //EXTENDER & FLIPPER PIDS
         //armMotor.setPower(extPID(extTarget, armMotor.getCurrentPosition()));
@@ -194,6 +195,20 @@ public class RedTele extends LinearOpMode {
                 )
         );
         drive.update();
+    }
+
+    public void stateCheck()
+    {
+        if(clawIH)
+        {
+            telemetry.addLine("CLAW CLOSE");
+        }
+        else{
+            telemetry.addLine("CLAW OPEN");
+        }
+
+        telemetry.addData("flp TARGET - ", flpTarget);
+        telemetry.addData("ext TARGET - ", extTarget);
     }
     public void driverBControls()
     {
@@ -237,12 +252,10 @@ public class RedTele extends LinearOpMode {
         {
             if(clawIH)
             {
-                telemetry.addLine("CLAW OPEN");
                 /*clawLServo.setPosition(0.5);
                 clawRServo.setPosition(0.5);*/
             }
             else {
-                telemetry.addLine("CLAW CLOSE");
                 /*clawLServo.setPosition(0);
                 clawRServo.setPosition(0);*/
             }
@@ -282,25 +295,29 @@ public class RedTele extends LinearOpMode {
         }
 
         //EXTENDER & FLIPPER
-        if(currG2.dpad_up && extTarget<(5000-100))
+        if(currG2.dpad_up )// && extTarget<(5000-100))
         {
             telemetry.addLine("ext UP");
-            extTarget+=100;
+            extTarget+=5;
+            gameModeB = controlStateB.FREE;
         }
-        else if(currG2.dpad_down && extTarget>(0+100))
+        else if(currG2.dpad_down)// && extTarget>(0+100))
         {
             telemetry.addLine("ext DOWN");
-            extTarget-=100;
+            extTarget-=5;
+            gameModeB = controlStateB.FREE;
         }
-        else if(currG2.dpad_left && flpTarget<(5000-100))
+        else if(currG2.dpad_left)// && flpTarget<(5000-100))
         {
             telemetry.addLine("flp UP");
-            flpTarget+=100;
+            flpTarget+=5;
+            gameModeB = controlStateB.FREE;
         }
-        else if(currG2.dpad_right && flpTarget>(0+100))
+        else if(currG2.dpad_right )//&& flpTarget>(0+100))
         {
             telemetry.addLine("flp DOWN");
-            flpTarget-=100;
+            flpTarget-=5;
+            gameModeB = controlStateB.FREE;
         }
     }
 

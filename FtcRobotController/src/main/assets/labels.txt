@@ -1,2 +1,0 @@
-0 gomba
-1 nincs gomba
