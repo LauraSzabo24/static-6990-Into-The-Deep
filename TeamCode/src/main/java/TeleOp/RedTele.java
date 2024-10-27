@@ -1,6 +1,11 @@
 package TeleOp;
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.arcrobotics.ftclib.controller.PIDController;
+import com.arcrobotics.ftclib.trajectory.TrapezoidProfile;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -16,25 +21,21 @@ import org.firstinspires.ftc.teamcode.drive.MecanumDrives.NewMecanumDrive;
 import Autonomous.Mailbox;
 
 @TeleOp
+@Config
 public class RedTele extends LinearOpMode {
 
-    //region EXTENDER PID
-    ElapsedTime timer = new ElapsedTime();
-    private double extError = 0;
-    private double extISum = 0;
-    public static double extP = 0.01;
-    public static double extI = 0.00;
-    public static double extD = 0.0;
-    public static int extTarget = 5000;
-    //endregion
+    //region EXTENDER FLIPPER CONTROLS
+    public static double ticksPerDegree = 537.7;
+    private PIDController flp;
+    public static double flpP = 0.001, flpI = 0.00, flpD = 0.0, flpF = 0;
+    public static int flpTarget = -160;
+    private PIDController ext;
+    public static double extP = 0.001, extI = 0.00, extD = 0.0, extF = 0;
+    public static int extTarget = 0;
 
-    //region FLIPPER PID
-    private double flpError = 0;
-    private double flpISum = 0;
-    public static double flpP = 0.01;
-    public static double flpI = 0.00;
-    public static double flpD = 0.0;
-    public static int flpTarget = 5000;
+    //TRAPEZOID CRAP
+    TrapezoidProfile.State trapState = new TrapezoidProfile.State();
+    TrapezoidProfile profile = new TrapezoidProfile(new TrapezoidProfile.Constraints(5, 10),trapState);
     //endregion
 
     //region DRIVER A MATERIAL
@@ -81,19 +82,22 @@ public class RedTele extends LinearOpMode {
 
     public void hardwareInit()
     {
-        /*
+        //PID
+        flp = new PIDController(flpP, flpI, flpD);
+        ext = new PIDController(extP, extI, extD);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+
         //arm motors
         flipMotor = hardwareMap.get(DcMotorEx.class, "flip");
         flipMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flipMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         flipMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        flpTarget = 0;
 
         armMotor = hardwareMap.get(DcMotorEx.class, "arm");
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extTarget = 0;
 
         //drive motors
         drive = new NewMecanumDrive(hardwareMap);
@@ -105,7 +109,7 @@ public class RedTele extends LinearOpMode {
         wristRServo = hardwareMap.get(Servo.class, "wristR");
         spinnerServo = hardwareMap.get(Servo.class, "spinner");
         clawLServo = hardwareMap.get(Servo.class, "clawL");
-        clawRServo = hardwareMap.get(Servo.class, "clawR");*/
+        clawRServo = hardwareMap.get(Servo.class, "clawR");
 
         //gamepads
         currG1 = new Gamepad();
@@ -113,14 +117,14 @@ public class RedTele extends LinearOpMode {
         currG2 = new Gamepad();
         oldG2 = new Gamepad();
 
-        /*
+
         //mailbox
         Mailbox mail =  new Mailbox();
         imu = hardwareMap.get(IMU.class, "imu");
         parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
-        imu.initialize(parameters);*/
+        imu.initialize(parameters);
     }
     @Override
     public void runOpMode() throws InterruptedException
@@ -145,13 +149,13 @@ public class RedTele extends LinearOpMode {
         currG1.copy(gamepad1);
         currG2.copy(gamepad2);
         telemetry.update();
-        //drive.update();
-       // poseEstimate = new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading());
+        drive.update();
+        poseEstimate = new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading());
 
         //CONTROLS
         switch(gameModeA){
             case UNLIMITED:
-                //driverAControls();
+                driverAControls();
                 break;
             case LIMITED:
                 break;
@@ -162,9 +166,31 @@ public class RedTele extends LinearOpMode {
         telemetry.addData("GAMEMODE A", gameModeA);
         stateCheck();
 
-        //EXTENDER & FLIPPER PIDS
-        //armMotor.setPower(extPID(extTarget, armMotor.getCurrentPosition()));
-        //flipMotor.setPower(flpPID(flpTarget, flipMotor.getCurrentPosition()));
+        //EXTENDER & FLIPPER
+        extCONTROLLER();
+        flpCONTROLLER();
+    }
+
+    public void extCONTROLLER()
+    {
+        ext.setPID(extP, extI, extD);
+        int extPose = armMotor.getCurrentPosition();
+        double extPwr = ext.calculate(extPose, extTarget) + (Math.cos(Math.toRadians(extTarget/ticksPerDegree)) * extF);
+        armMotor.setPower(extPwr);
+
+        telemetry.addData("extPos ", extPose);
+        telemetry.addData("extTarget ", extTarget);
+    }
+
+    public void flpCONTROLLER()
+    {
+        flp.setPID(flpP, flpI, flpD);
+        int flpPose = flipMotor.getCurrentPosition();
+        double flpPwr = flp.calculate(flpPose, flpTarget) + Math.cos(Math.toRadians(flpTarget/ticksPerDegree)) * flpF;
+        flipMotor.setPower(flpPwr);
+
+        telemetry.addData("flpPos ", flpPose);
+        telemetry.addData("flpTarget ", flpTarget);
     }
     public void driverAControls()
     {
@@ -250,16 +276,17 @@ public class RedTele extends LinearOpMode {
         //CLAW
         if (currG2.b && !oldG2.b)
         {
-            if(clawIH)
+            /*if(clawIH)
             {
-                /*clawLServo.setPosition(0.5);
-                clawRServo.setPosition(0.5);*/
+                //clawLServo.setPosition(clawLServo.getPosition() + 0.05);
+                clawRServo.setPosition(0.5);
             }
             else {
-                /*clawLServo.setPosition(0);
-                clawRServo.setPosition(0);*/
+                //clawLServo.setPosition(0);
+                clawRServo.setPosition(0);
             }
-            clawIH = !clawIH;
+            clawIH = !clawIH;*/
+            spinnerServo.setPosition(1);
         }
 
         //JERK
@@ -278,11 +305,11 @@ public class RedTele extends LinearOpMode {
         }
 
         //WRIST
-        if(currG2.left_stick_y>0 || currG2.left_stick_y<0)
+        if(gamepad2.left_stick_y>0 || gamepad2.left_stick_y<0)
         {
             telemetry.addLine("WRIST MOVEMENT");
-            /*wristRServo.setPosition(wristRServo.getPosition() + (currG2.left_stick_y * 0.5));
-            wristLServo.setPosition(wristRServo.getPosition() + (currG2.left_stick_y * 0.5));*/
+            wristRServo.setPosition(wristRServo.getPosition() - (currG2.left_stick_y * 0.5));
+            wristLServo.setPosition(wristLServo.getPosition() + (currG2.left_stick_y * 0.5));
             gameModeB = controlStateB.FREE;
         }
 
@@ -290,56 +317,34 @@ public class RedTele extends LinearOpMode {
         if(currG2.right_stick_x>0 || currG2.right_stick_x<0)
         {
             telemetry.addLine("SPINNER MOVEMENT");
-           // spinnerServo.setPosition(spinnerServo.getPosition() + (currG2.right_stick_x * 0.5));
+            spinnerServo.setPosition(spinnerServo.getPosition() + (currG2.right_stick_x * 0.5));
             gameModeB = controlStateB.FREE;
         }
 
         //EXTENDER & FLIPPER
-        if(currG2.dpad_up )// && extTarget<(5000-100))
-        {
-            telemetry.addLine("ext UP");
-            extTarget+=5;
-            gameModeB = controlStateB.FREE;
-        }
-        else if(currG2.dpad_down)// && extTarget>(0+100))
+        if(gamepad2.dpad_up )//&& extTarget<100)
         {
             telemetry.addLine("ext DOWN");
-            extTarget-=5;
+            extTarget+=10;
             gameModeB = controlStateB.FREE;
         }
-        else if(currG2.dpad_left)// && flpTarget<(5000-100))
+        else if(gamepad2.dpad_down)// && extTarget>-800)
         {
-            telemetry.addLine("flp UP");
-            flpTarget+=5;
+            telemetry.addLine("ext UP");
+            extTarget-=10;
             gameModeB = controlStateB.FREE;
         }
-        else if(currG2.dpad_right )//&& flpTarget>(0+100))
+        else if(gamepad2.dpad_left && flpTarget<-50)
         {
             telemetry.addLine("flp DOWN");
-            flpTarget-=5;
+            flpTarget+=40;
+            gameModeB = controlStateB.FREE;
+        }
+        else if(gamepad2.dpad_right && flpTarget>-1600)
+        {
+            telemetry.addLine("flp UP");
+            flpTarget-=40;
             gameModeB = controlStateB.FREE;
         }
     }
-
-    public double extPID(int target, int state)
-    {
-        int currError = target - state;
-        extISum += currError * timer.seconds();
-        double deriv = (currError - extError)/timer.seconds();
-        extError = currError;
-
-        timer.reset();
-        return ((extP * currError) + (extI * extISum) + (extD*deriv));
-    }
-    public double flpPID(int target, int state)
-    {
-        int currError = target - state;
-        flpISum += currError * timer.seconds();
-        double deriv = (currError - flpError)/timer.seconds();
-        flpError = currError;
-
-        timer.reset();
-        return ((flpP * currError) + (flpI * flpISum) + (flpD*deriv));
-    }
-
 }
