@@ -27,16 +27,12 @@ public class RedTele extends LinearOpMode {
     //region EXTENDER FLIPPER CONTROLS
     public static double ticksPerDegree = 537.7;
     private PIDController flp;
-    public static double flpP = 0.001, flpI = 0.00, flpD = 0.0, flpF = 0;
-    public static int flpTarget = -160;
+    public static double flpP = 0.004, flpI = 0.0005, flpD = 0.00014, flpF = 0.001;
+    public static int flpTarget = -100;
     private PIDController ext;
     public static double extP = 0.001, extI = 0.00, extD = 0.0, extF = 0;
-    public static int extTarget = 0;
-
-    //TRAPEZOID CRAP
-    TrapezoidProfile.State trapState = new TrapezoidProfile.State();
-    TrapezoidProfile profile = new TrapezoidProfile(new TrapezoidProfile.Constraints(5, 10),trapState);
-    //endregion
+    public static int extTarget = -100;
+    FtcDashboard dashboard;
 
     //region DRIVER A MATERIAL
     IMU imu;
@@ -82,6 +78,9 @@ public class RedTele extends LinearOpMode {
 
     public void hardwareInit()
     {
+        //RANDOM
+        dashboard = FtcDashboard.getInstance();
+
         //PID
         flp = new PIDController(flpP, flpI, flpD);
         ext = new PIDController(extP, extI, extD);
@@ -133,8 +132,10 @@ public class RedTele extends LinearOpMode {
         clawIH = true;
         gameModeB = controlStateB.FREE;
         gameModeA = controlStateA.UNLIMITED;
+        movementInit();
 
         waitForStart();
+
         if (isStopRequested()) return;
 
         while (opModeIsActive() && !isStopRequested()) {
@@ -236,6 +237,14 @@ public class RedTele extends LinearOpMode {
         telemetry.addData("flp TARGET - ", flpTarget);
         telemetry.addData("ext TARGET - ", extTarget);
     }
+
+    public void movementInit()
+    {
+        wristRServo.setPosition(1);
+        wristLServo.setPosition(1);
+        clawLServo.setPosition(0.6);
+        clawRServo.setPosition(0.2);
+    }
     public void driverBControls()
     {
         //PRESET POSES
@@ -276,17 +285,16 @@ public class RedTele extends LinearOpMode {
         //CLAW
         if (currG2.b && !oldG2.b)
         {
-            /*if(clawIH)
+            if(clawIH)
             {
-                //clawLServo.setPosition(clawLServo.getPosition() + 0.05);
-                clawRServo.setPosition(0.5);
+                clawLServo.setPosition(0.6);
+                clawRServo.setPosition(0.2);
             }
             else {
-                //clawLServo.setPosition(0);
-                clawRServo.setPosition(0);
+                clawLServo.setPosition(0.2);
+                clawRServo.setPosition(0.6);
             }
-            clawIH = !clawIH;*/
-            spinnerServo.setPosition(1);
+            clawIH = !clawIH;
         }
 
         //JERK
@@ -305,11 +313,18 @@ public class RedTele extends LinearOpMode {
         }
 
         //WRIST
-        if(gamepad2.left_stick_y>0 || gamepad2.left_stick_y<0)
+        if(gamepad2.left_stick_x>0 || gamepad2.left_stick_x<0)
         {
             telemetry.addLine("WRIST MOVEMENT");
-            wristRServo.setPosition(wristRServo.getPosition() - (currG2.left_stick_y * 0.5));
-            wristLServo.setPosition(wristLServo.getPosition() + (currG2.left_stick_y * 0.5));
+            wristRServo.setPosition(wristRServo.getPosition() - (currG2.left_stick_x * 0.05));
+            wristLServo.setPosition(wristLServo.getPosition() + (currG2.left_stick_x * 0.05));
+            gameModeB = controlStateB.FREE;
+        }
+        if(gamepad2.left_stick_button)
+        {
+            telemetry.addLine("WRIST MOVEMENT");
+            wristRServo.setPosition(1);
+            wristLServo.setPosition(1);
             gameModeB = controlStateB.FREE;
         }
 
@@ -317,34 +332,88 @@ public class RedTele extends LinearOpMode {
         if(currG2.right_stick_x>0 || currG2.right_stick_x<0)
         {
             telemetry.addLine("SPINNER MOVEMENT");
-            spinnerServo.setPosition(spinnerServo.getPosition() + (currG2.right_stick_x * 0.5));
+            spinnerServo.setPosition(spinnerServo.getPosition() + (currG2.right_stick_x * 0.05));
             gameModeB = controlStateB.FREE;
         }
 
-        //EXTENDER & FLIPPER
-        if(gamepad2.dpad_up )//&& extTarget<100)
-        {
-            telemetry.addLine("ext DOWN");
-            extTarget+=10;
-            gameModeB = controlStateB.FREE;
-        }
-        else if(gamepad2.dpad_down)// && extTarget>-800)
+        //EXTENDER
+        if(gamepad2.dpad_up && extTarget<=1600)
         {
             telemetry.addLine("ext UP");
-            extTarget-=10;
             gameModeB = controlStateB.FREE;
+            if(extTarget+50>=1420)
+            {
+                extTarget+=Math.abs(Math.abs(extTarget)-1600);
+            }
+            else {
+                extTarget+=50;
+            }
         }
-        else if(gamepad2.dpad_left && flpTarget<-50)
+        else if(gamepad2.dpad_down && extTarget>=-20)
+        {
+            telemetry.addLine("ext DOWN");
+            gameModeB = controlStateB.FREE;
+            if(extTarget-50<=-20)
+            {
+                extTarget-=Math.abs(Math.abs(extTarget)-20);
+            }
+            else {
+                extTarget-=50;
+            }
+        }
+
+        //FLIPPER
+        else if(gamepad2.dpad_left && flpTarget<=-100)
         {
             telemetry.addLine("flp DOWN");
-            flpTarget+=40;
             gameModeB = controlStateB.FREE;
+
+            if(flpTarget+80>=-100)
+            {
+                flpTarget+=Math.abs(flpTarget+100);
+            }
+            else {
+                flpTarget+=80;
+            }
         }
-        else if(gamepad2.dpad_right && flpTarget>-1600)
+        else if(gamepad2.dpad_right && flpTarget>=-1580)
         {
             telemetry.addLine("flp UP");
-            flpTarget-=40;
             gameModeB = controlStateB.FREE;
+
+            if(flpTarget-80<=-1580)
+            {
+                flpTarget-=Math.abs(flpTarget+1580);
+            }
+            else {
+                flpTarget-=80;
+            }
+        }
+
+        //PULSES
+        if(currG2.dpad_right && !oldG2.dpad_right && flpTarget>=-1580)
+    {
+        telemetry.addLine("flp UP");
+        gameModeB = controlStateB.FREE;
+
+        if(flpTarget-10<=-1580)
+        {
+            flpTarget-=Math.abs(flpTarget+1580);
+        }
+        else {
+            flpTarget-=10;
         }
     }
+        else if (currG2.dpad_left && !oldG2.dpad_left && flpTarget<=-100) {
+            telemetry.addLine("flp DOWN");
+            gameModeB = controlStateB.FREE;
+
+            if (flpTarget + 10 >= -100) {
+                flpTarget += Math.abs(flpTarget + 100);
+            } else {
+                flpTarget += 10;
+            }
+        }
+    }
+
 }
