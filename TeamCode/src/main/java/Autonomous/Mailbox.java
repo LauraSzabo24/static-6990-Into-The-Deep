@@ -12,7 +12,6 @@ public class Mailbox
     public Mailbox()
     {
         listMain = new ArrayList<Pose2d>();
-        autoEndHead = 0;
     }
     public void setAutoEnd(Pose2d end){
         currentPose = end;
