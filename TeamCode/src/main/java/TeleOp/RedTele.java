@@ -306,14 +306,14 @@ public class RedTele extends LinearOpMode {
                 flpTarget+=40;
             }
         }
-        else if(gamepad2.dpad_right && flpTarget>=-1580)
+        else if(gamepad2.dpad_right && flpTarget>=-1650)
         {
             telemetry.addLine("flp UP");
             gameModeB = controlStateB.FREE;
 
-            if(flpTarget-40<=-1580)
+            if(flpTarget-40<=-1650)
             {
-                flpTarget-=Math.abs(flpTarget+1580);
+                flpTarget-=Math.abs(flpTarget+1650);
             }
             else {
                 flpTarget-=40;
@@ -326,17 +326,11 @@ public class RedTele extends LinearOpMode {
         {
             divider = 4;
             telemetry.addLine("TO HIGH POSITION");
-            if(!gameModeB.equals(controlStateB.PICKUP) || flpTarget<-1000) {
-                gameModeB = controlStateB.HIGH;
+            if(flpTarget>-700) {
                 jerkTimer.reset();
-                while (jerkTimer.time() < 0.5) {
-                    extTarget = 1500;
+                while(jerkTimer.time() < 0.2) {
                     flpTarget = -740;
-                    spinnerServo.setPosition(0.6989);
-                    wristRServo.setPosition(0.555);
-                    wristLServo.setPosition(0.2444);
                     flpCONTROLLER();
-                    extCONTROLLER();
                 }
             }
             else {
@@ -368,7 +362,7 @@ public class RedTele extends LinearOpMode {
             jerkTimer.reset();
             while (jerkTimer.time() < 0.5) {
                 extTarget = 0;
-                flpTarget = -300;
+                flpTarget = -250;
                 wristRServo.setPosition(0);
                 wristLServo.setPosition(0.8);
                 spinnerServo.setPosition(0.1522);
@@ -389,7 +383,7 @@ public class RedTele extends LinearOpMode {
 
             if(!pickupTwo) {
                 telemetry.addLine("PICKUP LOW");
-                wristRServo.setPosition(0);
+                wristRServo.setPosition(0.2);
                 wristLServo.setPosition(0.8);
                 pickupTwo = true;
             }
@@ -410,20 +404,20 @@ public class RedTele extends LinearOpMode {
         if(currG2.right_bumper && !oldG2.right_bumper)
         {
             divider = 4;
-            jerked = false;
             jerkTimer.reset();
-            while(jerkTimer.time() < 1.0) {
-                if(!jerked)
-                {
-                    clawLServo.setPosition(0.2);
-                    clawRServo.setPosition(0.6);
-                    jerked = true;
-                }
+            wristRServo.setPosition(0.8);
+            wristLServo.setPosition(0.2);
+            flpTarget = -600;
+
+            jerkTimer.reset();
+            while(jerkTimer.time() < 1.0)
+            {
+                flpCONTROLLER();
             }
+            wristRServo.setPosition(0.555);
+            wristLServo.setPosition(0.2444);
             clawLServo.setPosition(0.6);
             clawRServo.setPosition(0.2);
-            jerked = false;
-
         }
         divider = 1;
     }
