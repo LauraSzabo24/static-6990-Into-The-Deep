@@ -14,8 +14,8 @@ public class Mailbox
         listMain = new ArrayList<Pose2d>();
     }
     public void setAutoEnd(Pose2d end){
-        currentPose = end;
-        listMain.add(end);
+        //currentPose = end;
+        //listMain.add(end);
     }
     public static ArrayList<Pose2d> getPoses()
     {
@@ -23,7 +23,8 @@ public class Mailbox
     }
     public void setAutoEndHead(double end)
     {
-        autoEndHead = end;
+        autoEndHead = 0;
+        //autoEndHead = end;
     }
     public double getAutoEndHead()
     {

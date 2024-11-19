@@ -7,7 +7,7 @@ import com.acmerobotics.roadrunner.localization.TwoTrackingWheelLocalizer;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.drive.MecanumDrives.NewMecanumDrive;
+import org.firstinspires.ftc.teamcode.drive.NewMecanumDrive;
 import org.firstinspires.ftc.teamcode.util.Encoder;
 
 import java.util.Arrays;
@@ -34,19 +34,19 @@ import java.util.List;
  *    \--------------/
  *
  */
-public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
+public class NewTwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
     public static double TICKS_PER_REV = 8192;
     public static double WHEEL_RADIUS = 0.6; // in
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (encoder) speed
 
-    public static double PARALLEL_X = 7.75; // X is the up and down direction
-    public static double PARALLEL_Y = 6.5; // Y is the strafe direction
+    public static double PARALLEL_X = 1.5; // X is the up and down direction
+    public static double PARALLEL_Y = 6.25; // Y is the strafe direction
 
-    public static double PERPENDICULAR_X = 2.75;
-    public static double PERPENDICULAR_Y = 6.5;
+    public static double PERPENDICULAR_X = 2.8;
+    public static double PERPENDICULAR_Y = 5.25;
 
-    public static double X_MULTIPLIER = 1.206;
-    public static double Y_MULTIPLIER = -1; // 29.6, 25.456, 26.29, 3.319
+    public static double X_MULTIPLIER = 1.173; //77.034, 76.93, 76.2
+    public static double Y_MULTIPLIER = 1.1586; //77.698, 77.92, 77.42
 
     // Parallel/Perpendicular to the forward axis
     // Parallel wheel is parallel to the forward axis
@@ -55,7 +55,7 @@ public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
 
     private NewMecanumDrive drive;
 
-    public TwoWheelTrackingLocalizer(HardwareMap hardwareMap, NewMecanumDrive drive) {
+    public NewTwoWheelTrackingLocalizer(HardwareMap hardwareMap, NewMecanumDrive drive) {
         super(Arrays.asList(
             new Pose2d(PARALLEL_X, PARALLEL_Y, 0),
             new Pose2d(PERPENDICULAR_X, PERPENDICULAR_Y, Math.toRadians(90))
@@ -63,10 +63,11 @@ public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
 
         this.drive = drive;
 
-        parallelEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "paraEnc"));
+        parallelEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "BR"));
         perpendicularEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "perpEnc"));
 
         // TODO: reverse any encoders using Encoder.setDirection(Encoder.Direction.REVERSE)
+        //perpendicularEncoder.setDirection(Encoder.Direction.REVERSE);
     }
 
     public static double encoderTicksToInches(double ticks) {
@@ -87,8 +88,8 @@ public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
     @Override
     public List<Double> getWheelPositions() {
         return Arrays.asList(
-                encoderTicksToInches(parallelEncoder.getCurrentPosition() * X_MULTIPLIER),
-                encoderTicksToInches(perpendicularEncoder.getCurrentPosition() * Y_MULTIPLIER)
+                encoderTicksToInches(parallelEncoder.getCurrentPosition()) * X_MULTIPLIER,
+                encoderTicksToInches(perpendicularEncoder.getCurrentPosition()) * Y_MULTIPLIER
         );
     }
 
@@ -100,8 +101,8 @@ public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
         //  compensation method
 
         return Arrays.asList(
-                encoderTicksToInches(parallelEncoder.getCorrectedVelocity() * X_MULTIPLIER),
-                encoderTicksToInches(perpendicularEncoder.getCorrectedVelocity() * Y_MULTIPLIER)
+                encoderTicksToInches(parallelEncoder.getCorrectedVelocity()) * X_MULTIPLIER,
+                encoderTicksToInches(perpendicularEncoder.getCorrectedVelocity()) * Y_MULTIPLIER
         );
     }
 }

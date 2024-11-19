@@ -1,302 +1,79 @@
 package com.example.meepmeep;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.noahbres.meepmeep.MeepMeep;
-import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
-import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
+
+import org.rowlandhall.meepmeep.MeepMeep;
+import org.rowlandhall.meepmeep.roadrunner.DefaultBotBuilder;
+import org.rowlandhall.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
 public class MeepMeepField {
-    static int position;
-    static Pose2d myPose;
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(800);
-        myPose = new Pose2d(-36, -36, Math.toRadians(0));
-        RoadRunnerBotEntity robot = new DefaultBotBuilder(meepMeep)
+
+        RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
-                .followTrajectorySequence(drive ->
-                        drive.trajectorySequenceBuilder(new Pose2d(-36/*12*/, /*58*/-60, Math.toRadians(90/*-90*/)))
-                                //far blue through middle
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(26, 63, Math.toRadians(0)))
+                        //initial placement
+                        .splineTo(new Vector2d(58, 63), Math.toRadians(40))
 
-                                //tape #1
-                                    /*.lineToLinearHeading(new Pose2d(-36,34,Math.toRadians(180)))
-                                    //place pixel on tape
-                                    .lineToLinearHeading(new Pose2d(-36,10,Math.toRadians(0)))
-                                    .forward(72)*/
-                                //tape #2
-                                    /*.lineToLinearHeading(new Pose2d(-36,34,Math.toRadians(270)))
-                                    //place pixel on tape
-                                    .lineToLinearHeading(new Pose2d(-60,34, Math.toRadians(270)))
-                                    .lineToLinearHeading(new Pose2d(-60,10))
-                                    .forward(96)*/
-                                //tape #3
-                                    /*.lineToLinearHeading(new Pose2d(-36,34,Math.toRadians(0)))
-                                    //place pixel on tape
-                                    .lineToLinearHeading(new Pose2d(-36,10,Math.toRadians(0)))
-                                    .forward(72)*/
-
-                                /*.lineToLinearHeading(new Pose2d(36,34,Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36,10,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,34,Math.toRadians(180)))
-
-                                .lineToLinearHeading(new Pose2d(-60,10,Math.toRadians(0)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36,34,Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36,10,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,34,Math.toRadians(180)))
-                                .build()*/
+                        .build());
 
 
-
-                                //far blue through side
-                                //tape #1
-                                    //.lineToLinearHeading(new Pose2d(-36,34,Math.toRadians(180)))
-                                    //place pixel on tape
-                                //tape #2
-                                    //.lineToLinearHeading(new Pose2d(-36,34,Math.toRadians(270)))
-                                    //place pixel on tape
-                                //tape #3
-                                    //.lineToLinearHeading(new Pose2d(-36,34,Math.toRadians(0)))
-                                    //place pixel on tape
-
-                                //pick up 2 white pixels
-
-                                /*.lineToLinearHeading(new Pose2d(-36,58,Math.toRadians(0)))
-                                .forward(72)
-                                .lineToLinearHeading(new Pose2d(36,34,Math.toRadians(0)))
-                                //place preloaded pixel on board
-
-                                .lineToLinearHeading(new Pose2d(36,58,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,34,Math.toRadians(180)))
-
-                                .lineToLinearHeading(new Pose2d(-60,58,Math.toRadians(0)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36,34,Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36,58,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,34,Math.toRadians(180)))
-                                .build()*/
-
-
-
-                                //close blue down middle
-                                //tape #1
-                                    /*.lineToLinearHeading(new Pose2d(12, 34, Math.toRadians(180)))
-                                    .lineToLinearHeading(new Pose2d(36, 34, Math.toRadians(0)))*/
-                                //tape #2
-                                    /*.lineToLinearHeading(new Pose2d(12, 34, Math.toRadians(-90)))
-                                    .lineToLinearHeading(new Pose2d(36, 34, Math.toRadians(0)))*/
-                                //tape #3
-                                    /*.lineToLinearHeading(new Pose2d(36, 58, Math.toRadians(180)))
-                                    .lineToLinearHeading(new Pose2d(36, 34,Math.toRadians(180)))
-                                .turn(Math.toRadians(180))*/
-
-                                /*.lineToLinearHeading(new Pose2d(36,10,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36, 10, Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36, 34,Math.toRadians(0)))
-
-                                .lineToLinearHeading(new Pose2d(36,10,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36, 10, Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36,34,Math.toRadians(0)))
-                                .build()*/
-
-
-
-                                //close blue down side
-                                //tape #1
-                                    /*.lineToLinearHeading(new Pose2d(12, 34, Math.toRadians(180)))
-                                    .lineToLinearHeading(new Pose2d(36, 34, Math.toRadians(0)))*/
-                                //tape #2
-                                    /*.lineToLinearHeading(new Pose2d(12, 34, Math.toRadians(-90)))
-                                    .lineToLinearHeading(new Pose2d(36, 34, Math.toRadians(0)))*/
-                                //tape #3
-                                    /*.lineToLinearHeading(new Pose2d(36, 58, Math.toRadians(180)))
-                                    .lineToLinearHeading(new Pose2d(36, 34,Math.toRadians(180)))
-                                    .turn(Math.toRadians(180))*/
-
-                                /*.lineToLinearHeading(new Pose2d(36,58,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,34,Math.toRadians(180)))
-
-                                .lineToLinearHeading(new Pose2d(-60,58,Math.toRadians(0)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36,34,Math.toRadians(0)))
-
-                                .lineToLinearHeading(new Pose2d(36,58,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,34,Math.toRadians(180)))
-
-                                .lineToLinearHeading(new Pose2d(-60,58,Math.toRadians(0)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36,34,Math.toRadians(0)))
-                                .build()*/
-
-
-
-
-
-
-
-
-
-                                //far red through middle
-
-                                //tape #1
-                                    /*.lineToLinearHeading(new Pose2d(-36,-36,Math.toRadians(180)))
-                                    //place pixel on tape
-                                    .lineToLinearHeading(new Pose2d(-36,-12,Math.toRadians(0)))
-                                    .forward(72)*/
-                                //tape #2
-                                    .lineToLinearHeading(new Pose2d(-36,-36,Math.toRadians(90)))
-                                    //place pixel on tape
-                                    .lineToLinearHeading(new Pose2d(-60,-36, Math.toRadians(90)))
-                                    .lineToLinearHeading(new Pose2d(-60,-12))
-                                    .forward(96)
-                                //tape #3
-                                    /*.lineToLinearHeading(new Pose2d(-36,-36,Math.toRadians(0)))
-                                    //place pixel on tape
-                                    .lineToLinearHeading(new Pose2d(-36,-12,Math.toRadians(0)))
-                                    .forward(72)*/
-
-                                .lineToLinearHeading(new Pose2d(36,-36,Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36,-12,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,-36,Math.toRadians(180)))
-
-                                .lineToLinearHeading(new Pose2d(-60,-12,Math.toRadians(0)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36,-36,Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36,-12,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,-36,Math.toRadians(180)))
-                                .build()
-
-
-
-                                //far red through side
-                                //tape #1
-                                    //.lineToLinearHeading(new Pose2d(-36,-36,Math.toRadians(180)))
-                                    //place pixel on tape
-                                //tape #2
-                                    //.lineToLinearHeading(new Pose2d(-36,-36,Math.toRadians(90)))
-                                    //place pixel on tape
-                                //tape #3
-                                    //.lineToLinearHeading(new Pose2d(-36,-36,Math.toRadians(0)))
-                                    //place pixel on tape
-
-                                //pick up 2 white pixels
-
-                                /*.lineToLinearHeading(new Pose2d(-36,-60,Math.toRadians(0)))
-                                .forward(72)
-                                .lineToLinearHeading(new Pose2d(36,-36,Math.toRadians(0)))
-                                //place preloaded pixel on board
-
-                                .lineToLinearHeading(new Pose2d(36,-60,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,-36,Math.toRadians(180)))
-                                //pick up 2 white pixels
-
-                                .lineToLinearHeading(new Pose2d(-60,-60,Math.toRadians(0)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36,-36,Math.toRadians(0)))
-                                //place white pixels on board
-
-                                .lineToLinearHeading(new Pose2d(36,-60,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,-36,Math.toRadians(180)))
-                                //pick up 2 white pixels
-                                .build()*/
-
-
-
-                                //close red down middle
-                                //tape #1
-                                    /*.lineToLinearHeading(new Pose2d(12, -36, Math.toRadians(180)))
-                                    .lineToLinearHeading(new Pose2d(36, -36, Math.toRadians(0)))*/
-                                    //place pixel on tape
-                                //tape #2
-                                    /*.lineToLinearHeading(new Pose2d(12, -36, Math.toRadians(90)))
-                                    .lineToLinearHeading(new Pose2d(36, -36, Math.toRadians(0)))*/
-                                    //place pixel on tape
-                                //tape #3
-                                    /*.lineToLinearHeading(new Pose2d(36, -60, Math.toRadians(180)))
-                                    .lineToLinearHeading(new Pose2d(36, -36,Math.toRadians(180)))
-                                    //place pixel on tape
-                                    .turn(Math.toRadians(180))*/
-
-                                //place pre-loaded pixel on board
-
-                                /*.lineToLinearHeading(new Pose2d(36,-12,Math.toRadians(180)))
-                                .forward(96)
-                                //pick up 2 white pixels
-
-                                .lineToLinearHeading(new Pose2d(36, -12, Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36, -36,Math.toRadians(0)))
-                                //place white pixels on board
-
-                                .lineToLinearHeading(new Pose2d(36,-12,Math.toRadians(180)))
-                                .forward(96)
-                                //pick up 2 white pixels
-
-                                .lineToLinearHeading(new Pose2d(36, -12, Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(36, -36,Math.toRadians(0)))
-                                //place white pixels on board
-                                .build()*/
-
-
-
-                                //close red down side
-                                //tape #1
-                                    /*.lineToLinearHeading(new Pose2d(12, -36, Math.toRadians(180)))
-                                    .lineToLinearHeading(new Pose2d(36, -36, Math.toRadians(0)))*/
-                                    //place pixel on tape
-                                //tape #2
-                                    /*.lineToLinearHeading(new Pose2d(12, -36, Math.toRadians(90)))
-                                    .lineToLinearHeading(new Pose2d(36, -36, Math.toRadians(0)))*/
-                                    //place pixel on tape
-                                //tape #3
-                                    /*.lineToLinearHeading(new Pose2d(36, -60, Math.toRadians(180)))
-                                    .lineToLinearHeading(new Pose2d(36, -36,Math.toRadians(180)))
-                                    //place pixel on tape
-                                    .turn(Math.toRadians(180))*/
-
-                                /*.lineToLinearHeading(new Pose2d(36,-60,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,-36,Math.toRadians(180)))
-                                //pick up 2 white pixels
-
-                                .lineToLinearHeading(new Pose2d(-60,-60,Math.toRadians(0)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36,-36,Math.toRadians(0)))
-                                //place white pixels on board
-
-                                .lineToLinearHeading(new Pose2d(36,-60,Math.toRadians(180)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(-60,-36,Math.toRadians(180)))
-                                //pick up 2 white pixels
-
-                                .lineToLinearHeading(new Pose2d(-60,-60,Math.toRadians(0)))
-                                .forward(96)
-                                .lineToLinearHeading(new Pose2d(36,-36,Math.toRadians(0)))
-                                //place white pixels on board
-                                .build()*/
-
-
-
-                );
-
-        meepMeep.setBackground(MeepMeep.Background.FIELD_CENTERSTAGE_JUICE_LIGHT)
+        meepMeep.setBackground(MeepMeep.Background.FIELD_INTOTHEDEEP_JUICE_DARK)
                 .setDarkMode(true)
                 .setBackgroundAlpha(0.95f)
-                .addEntity(robot)
+                .addEntity(myBot)
                 .start();
     }
 }
 
-//this is just the defualt meep meep testing code, change later
-//also change the powerplay field to the center stage one once its out
+//VERSION 1 LADDER AUTO
+/*
+//initial placement
+                        .splineToConstantHeading(new Vector2d(0, 35), Math.toRadians(-90))
+                        .forward(5)
+                        .back(5)
+
+                        //connection
+                        .splineToConstantHeading(new Vector2d(-36, 30), Math.toRadians(-90))
+                        .forward(10)
+
+                        //cycles in terminal
+                        .splineToConstantHeading(new Vector2d(-47, 10), Math.toRadians(-90))
+                        .splineToConstantHeading(new Vector2d(-47, 55), Math.toRadians(-90))
+
+                        .splineToConstantHeading(new Vector2d(-58, 10), Math.toRadians(-90))
+                        .splineToConstantHeading(new Vector2d(-58, 55), Math.toRadians(-90))
+
+                        .splineToConstantHeading(new Vector2d(-65, 10), Math.toRadians(-90))
+                        .splineToConstantHeading(new Vector2d(-65, 55), Math.toRadians(-90))
+
+                        .splineToConstantHeading(new Vector2d(-55, 35), Math.toRadians(-90))
+                        // claw out
+                        .back(10)
+                        .forward(10)
+                        //claw in
+
+                        //cycle 1
+                        .splineToConstantHeading(new Vector2d(0, 35), Math.toRadians(-90))
+                        .waitSeconds(2)
+                        .lineTo(new Vector2d(-55, 40))
+                        .back(10)
+                        .forward(10)
+
+                        //cycle 2
+                        .splineToConstantHeading(new Vector2d(0, 35), Math.toRadians(-90))
+                        .waitSeconds(2)
+                        .lineTo(new Vector2d(-55, 40))
+                        .back(10)
+                        .forward(10)
+
+                        //cycle 3
+                        .splineToConstantHeading(new Vector2d(0, 35), Math.toRadians(-90))
+                        .forward(3)
+                        .waitSeconds(2)
+
+                        .build());
+ */

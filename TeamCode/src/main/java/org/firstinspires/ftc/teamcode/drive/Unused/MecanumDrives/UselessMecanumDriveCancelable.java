@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.drive.MecanumDrives;
+package org.firstinspires.ftc.teamcode.drive.Unused.MecanumDrives;
 
 import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ACCEL;
 import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ANG_ACCEL;
@@ -44,7 +44,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequenceBuilder;
-import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequenceRunnerCancelable;
+import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequenceRunner;
 import org.firstinspires.ftc.teamcode.util.LynxModuleUtil;
 
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ import Autonomous.Mailbox;
  * Simple mecanum drive hardware implementation for REV hardware.
  */
 @Config
-public class NewMecanumDriveCancelable extends MecanumDrive {
+public class UselessMecanumDriveCancelable extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(2, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(-4, 0, 0);
 
@@ -67,7 +67,7 @@ public class NewMecanumDriveCancelable extends MecanumDrive {
     public static double VY_WEIGHT = 1;
     public static double OMEGA_WEIGHT = 1;
 
-    private TrajectorySequenceRunnerCancelable trajectorySequenceRunner;
+    private TrajectorySequenceRunner trajectorySequenceRunner;
 
     private static final TrajectoryVelocityConstraint VEL_CONSTRAINT = getVelocityConstraint(MAX_VEL, MAX_ANG_VEL, TRACK_WIDTH);
     private static final TrajectoryAccelerationConstraint ACCEL_CONSTRAINT = getAccelerationConstraint(MAX_ACCEL);
@@ -83,7 +83,7 @@ public class NewMecanumDriveCancelable extends MecanumDrive {
     private List<Integer> lastEncPositions = new ArrayList<>();
     private List<Integer> lastEncVels = new ArrayList<>();
 
-    public NewMecanumDriveCancelable(HardwareMap hardwareMap) {
+    public UselessMecanumDriveCancelable(HardwareMap hardwareMap) {
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
 
         follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
@@ -98,7 +98,7 @@ public class NewMecanumDriveCancelable extends MecanumDrive {
         }
 
         // TODO: adjust the names of the following hardware devices to match your configuration
-       /* imu = hardwareMap.get(IMU.class, "imu");
+        /*imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 DriveConstants.LOGO_FACING_DIR, DriveConstants.USB_FACING_DIR));
         imu.initialize(parameters);*/
@@ -137,15 +137,12 @@ public class NewMecanumDriveCancelable extends MecanumDrive {
         // TODO: if desired, use setLocalizer() to change the localization method
         // setLocalizer(new StandardTrackingWheelLocalizer(hardwareMap, lastTrackingEncPositions, lastTrackingEncVels));
 
-        trajectorySequenceRunner = new TrajectorySequenceRunnerCancelable(
-                follower, HEADING_PID
+        trajectorySequenceRunner = new TrajectorySequenceRunner(
+                follower, HEADING_PID, batteryVoltageSensor,
+                lastEncPositions, lastEncVels, lastTrackingEncPositions, lastTrackingEncVels
         );
     }
 
-    public double secretAdditionMotorAverage()
-    {
-        return (Math.abs(leftFront.getVelocity())+Math.abs(rightFront.getVelocity())+Math.abs(leftRear.getVelocity())+Math.abs(rightRear.getVelocity()))/4;
-    }
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {
         return new TrajectoryBuilder(startPose, VEL_CONSTRAINT, ACCEL_CONSTRAINT);
     }
@@ -199,10 +196,6 @@ public class NewMecanumDriveCancelable extends MecanumDrive {
     public void followTrajectorySequence(TrajectorySequence trajectorySequence, Mailbox mail) {
         followTrajectorySequenceAsync(trajectorySequence);
         waitForIdle2(mail);
-    }
-
-    public void breakFollowing() {
-        trajectorySequenceRunner.breakFollowing();
     }
 
     public Pose2d getLastError() {
