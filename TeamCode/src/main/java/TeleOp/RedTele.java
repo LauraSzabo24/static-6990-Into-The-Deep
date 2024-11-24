@@ -14,9 +14,12 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import android.util.Log;
 
 import org.firstinspires.ftc.teamcode.drive.NewMecanumDrive;
-import org.firstinspires.ftc.teamcode.drive.Unused.DI_MecanumDrive;
+
+import java.io.File;
+import java.io.IOException;
 
 import Autonomous.Mailbox;
 
@@ -29,15 +32,15 @@ public class RedTele extends LinearOpMode {
     private double flpPosError = 0;
     private double flpPosISum = 0;
 
-    public static double flpPP = 0.1, flpPI = 0.001, flpPD = 0;
+    public static double flpPP = 0.1, flpPI = 0, flpPD = 0;
     public static int flpPosTarget = 0;
 
     //VELOCITY
     private double flpVeloError = 0;
     private double flpVeloISum = 0;
-
-    public static double flpVP = 0.0001, flpVI = 0.0001, flpVD = 0;
     public static int flpVeloTarget = 0;
+    public static int testTarget = 1200;
+    public static double flpVP = 0.0002, flpVI = 0.004, flpVD = 0.0000001;  //RISING
     //endregion
 
     //region EXTENDER CONTROLLER
@@ -95,7 +98,6 @@ public class RedTele extends LinearOpMode {
     //INITIALIZATIONS
     public void hardwareInit()
     {
-        /*
         //RANDOM
         dashboard = FtcDashboard.getInstance();
 
@@ -138,13 +140,6 @@ public class RedTele extends LinearOpMode {
                 RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
                 RevHubOrientationOnRobot.UsbFacingDirection.UP));
         imu.initialize(parameters);
-
-        */
-
-        flipMotor = hardwareMap.get(DcMotorEx.class, "flipMotor");
-        flipMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        flipMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        flipMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
     public void movementInit()
     {
@@ -170,13 +165,30 @@ public class RedTele extends LinearOpMode {
 
         waitForStart();
 
+        double cumutime = 0;
         if (isStopRequested()) return;
 
         while (opModeIsActive() && !isStopRequested()) {
             //mainLoop();
-            flpCONTROLLER(1500, flipMotor.getCurrentPosition());
-            telemetry.addData("velocity",flipMotor.getVelocity());
-            telemetry.addData("position",flipMotor.getCurrentPosition());
+            double time = timer.seconds();
+            timer.reset();
+            cumutime+=time;
+
+            int targetPositionYay = 0;
+            if(gamepad1.a)
+            {
+                targetPositionYay = -testTarget;
+            }
+            if(gamepad1.b)
+            {
+                targetPositionYay = testTarget;
+            }
+            //flpCONTROLLER(targetPositionYay, flipMotor.getCurrentPosition());
+            double needPower = flpVelocityCONTROLLER(targetPositionYay,flipMotor.getVelocity(), time);
+            flipMotor.setPower(needPower);
+            //telemetry.addData("targets", targetPositionYay);
+            telemetry.addData("power",needPower);
+            telemetry.addData("time",cumutime);
             telemetry.update();
         }
     }
@@ -467,17 +479,39 @@ public class RedTele extends LinearOpMode {
 
         double veloTarget = (flpPP * currError) + (flpPI * flpPosISum) + (flpPD*deriv);
         telemetry.addData("targetvelo",veloTarget);
-        flipMotor.setPower(flpVelocityCONTROLLER(veloTarget, flipMotor.getVelocity(), time));
+        double neededPower = flpVelocityCONTROLLER(veloTarget, flipMotor.getVelocity(), time);
+        telemetry.addData("power",neededPower);
+        flipMotor.setPower(neededPower);
     }
 
     public double flpVelocityCONTROLLER(double target, double state, double time) //in with the velocity -> out with the power
     {
-        double currError = target - state;
+        /*if(target<=-300)
+        {
+            target = -300;
+        }*/
+        double currError = (target - state);
         flpVeloISum += currError * time;
         double deriv = (currError - flpVeloError)/time;
         flpVeloError = currError;
-        return (flpVP * currError) + (flpVI * flpVeloISum) + (flpVD*deriv);
+
+        telemetry.addData("velocity",flipMotor.getVelocity());
+        telemetry.addData("position",flipMotor.getCurrentPosition());
+
+        if((flipMotor.getCurrentPosition()>-900 && target>0) || (flipMotor.getCurrentPosition()<-900 && target<0)) //IS FALLING
+        {
+            telemetry.addLine("FALLING");
+            telemetry.addData("ERROR", currError);
+            return (flpVP * currError) + (flpVI *flpVeloISum) + (flpVD * deriv);
+        }
+        else //IS RISING
+        {
+            telemetry.addLine("RISING");
+            return (flpVP * currError) + (flpVI *flpVeloISum) + (flpVD * deriv);
+        }
     }
+
+    //(flpVG*Math.sin(Math.toRadians((flipMotor.getCurrentPosition()/-1800.0)*180))
 
     //TELEMETRY
     public void stateCheck()

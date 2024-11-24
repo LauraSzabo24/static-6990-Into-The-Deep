@@ -29,7 +29,7 @@ public class DetectorRunner extends LinearOpMode {
         WebcamName camera = hardwareMap.get(WebcamName.class, "camera");
         OpenCvCamera cam = OpenCvCameraFactory.getInstance().createWebcam(camera, cameraMonitorViewId);
 
-        PropDetectorBLUE redDetector = new PropDetectorBLUE(telemetry);
+        OrientationDetector redDetector = new OrientationDetector(telemetry);
         cam.setPipeline(redDetector);
         cam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
@@ -48,16 +48,18 @@ public class DetectorRunner extends LinearOpMode {
 
         sleep(20);
 
+        waitForStart();
+
         // region MOTORS AND SERVOS INIT STUFF
-        NewMecanumDrive drive = new NewMecanumDrive(hardwareMap);
+       // NewMecanumDrive drive = new NewMecanumDrive(hardwareMap);
         //endregion
 
         //region TRAJECTORIES (left/right in robot perspective)
-        Pose2d startPose = new Pose2d(-14, 0, Math.toRadians(-90)); //90
-        drive.setPoseEstimate(startPose);
+        //Pose2d startPose = new Pose2d(-14, 0, Math.toRadians(-90)); //90
+        //drive.setPoseEstimate(startPose);
         //endregion
 
-        TrajectorySequence test = drive.trajectorySequenceBuilder(startPose) //(-14, 0_)
+        /*TrajectorySequence test = drive.trajectorySequenceBuilder(startPose) //(-14, 0_)
                 .turn(Math.toRadians(123))
                 .build();
 
@@ -74,6 +76,6 @@ public class DetectorRunner extends LinearOpMode {
 
         //drive.followTrajectorySequence(test, mail);
         mail.setAutoEnd((new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading() + Math.toRadians(-180))));
-
+        */
     }
 }
