@@ -158,10 +158,10 @@ public class RedTele extends LinearOpMode {
     {
         hardwareInit();
 
-        /*movementInit();
-        clawIH = true;
+        //movementInit();
+       // clawIH = true;
         gameModeB = controlStateB.FREE;
-        gameModeA = controlStateA.UNLIMITED;*/
+        gameModeA = controlStateA.UNLIMITED;
 
         waitForStart();
 
@@ -169,8 +169,8 @@ public class RedTele extends LinearOpMode {
         if (isStopRequested()) return;
 
         while (opModeIsActive() && !isStopRequested()) {
-            //mainLoop();
-            double time = timer.seconds();
+            mainLoop();
+            /*double time = timer.seconds();
             timer.reset();
             cumutime+=time;
 
@@ -189,7 +189,7 @@ public class RedTele extends LinearOpMode {
             //telemetry.addData("targets", targetPositionYay);
             telemetry.addData("power",needPower);
             telemetry.addData("time",cumutime);
-            telemetry.update();
+            telemetry.update();*/
         }
     }
     public void mainLoop()

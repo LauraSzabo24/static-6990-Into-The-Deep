@@ -15,6 +15,7 @@ import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
@@ -75,22 +76,23 @@ public class OrientationDetector extends OpenCvPipeline {
         //GET CONTOURS
         Mat canMat = new Mat();
         Imgproc.GaussianBlur(mat, canMat, new Size(5.0, 15.0), 0.00);
-        Imgproc.Canny(canMat, canMat, 100, 200);
+        Imgproc.Canny(canMat, canMat, 10, 10); //100,200
 
-        Mat dilatedOutput = new Mat();
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));  // Define a kernel
-        //Imgproc.dilate(canMat, dilatedOutput, kernel);
 
         Mat erodedOutput = new Mat();
         Imgproc.erode(canMat, erodedOutput, kernel);
+
+        Mat dilatedOutput = new Mat();
+        Imgproc.dilate(canMat, dilatedOutput, kernel);
 
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
         Imgproc.findContours(canMat, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
 
         //FILTER CONTOURS
-        MatOfPoint recordMat = new MatOfPoint();
-        double recordArea = 0;
+        /*MatOfPoint recordMat = new MatOfPoint();
+        double recordArea = 40;
         for(MatOfPoint cont: contours)
         {
             if(Imgproc.contourArea(cont)>recordArea)
@@ -133,14 +135,15 @@ public class OrientationDetector extends OpenCvPipeline {
             hullArray[0] = new MatOfPoint();
             hullArray[0].fromList(hullPoints);
             Mat temp = new Mat();
-            Imgproc.polylines(contourImage, java.util.Arrays.asList(hullArray), true, new Scalar(0, 0, 255), 2);
-        }
+            Imgproc.polylines(contourImage, Arrays.asList(hullArray), true, new Scalar(0, 0, 255), 2);
+        }*/
 
         //FIND X Y Z VECTORS
 
 
-        return contourImage;
+        return canMat; //contourImage
     }
+
 
     public double distance(Point P, Point Q)
     {
