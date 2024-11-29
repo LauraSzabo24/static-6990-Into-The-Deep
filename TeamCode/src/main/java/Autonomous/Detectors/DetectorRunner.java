@@ -51,7 +51,7 @@ public class DetectorRunner extends LinearOpMode {
         waitForStart();
 
         // region MOTORS AND SERVOS INIT STUFF
-       // NewMecanumDrive drive = new NewMecanumDrive(hardwareMap);
+        // NewMecanumDrive drive = new NewMecanumDrive(hardwareMap);
         //endregion
 
         //region TRAJECTORIES (left/right in robot perspective)

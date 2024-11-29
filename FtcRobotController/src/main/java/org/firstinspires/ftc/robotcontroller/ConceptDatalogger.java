@@ -14,11 +14,10 @@ Android Studio programmers can see instructions in the Datalogger class notes.
 Credit to @Windwoes (https://github.com/Windwoes).
 
 */
-
-
 package org.firstinspires.ftc.robotcontroller;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -33,12 +32,18 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 
+@Config
 @TeleOp(name = "Concept Datalogger v01", group = "Datalogging")
 public class ConceptDatalogger extends LinearOpMode
 {
     Datalog datalog;
     BNO055IMU imu;
-    public static String numLog = "03";
+    public static String numLog = "08";
+
+    //public static double power = 0.05;
+    public static double velocity = 0.05;
+
+    public boolean beenHere = false;
 
     //region FLIPPER CONTROLLER
     //POSITION
@@ -46,15 +51,15 @@ public class ConceptDatalogger extends LinearOpMode
     private double flpPosError = 0;
     private double flpPosISum = 0;
 
-    public static double flpPP = 0.1, flpPI = 0, flpPD = 0;
-    public static int flpPosTarget = 0;
+    public  double flpPP = 0.1, flpPI = 0, flpPD = 0;
+    public  int flpPosTarget = 0;
 
     //VELOCITY
     private double flpVeloError = 0;
     private double flpVeloISum = 0;
-    public static int flpVeloTarget = 0;
-    public static int testTarget = 1200;
-    public static double flpVP = 0.0002, flpVI = 0.004, flpVD = 0.0000001;  //RISING
+    public int flpVeloTarget = 0;
+    public int testTarget = 1200;
+    public double flpVP = 0.0002, flpVI = 0.004, flpVD = 0.0000001;  //RISING
     //endregion
 
     //region DRIVER B MATERIAL
@@ -117,7 +122,8 @@ public class ConceptDatalogger extends LinearOpMode
         if (isStopRequested()) return;
 
         for (int i = 0; opModeIsActive(); i++) {
-            double time = timer.seconds();
+
+            /*double time = timer.seconds();
             timer.reset();
             cumutime+=time;
 
@@ -143,15 +149,33 @@ public class ConceptDatalogger extends LinearOpMode
                 datalog.opModeStatus.set("RISING");
             }
             else {
-                datalog.opModeStatus.set("FALLING");
+            }*/
+
+            if (flipMotor.getCurrentPosition()<=-4000)
+            {
+                beenHere = true;
+                //flipMotor.setPower(power);
+                flipMotor.setVelocity(velocity);
+                datalog.opModeStatus.set("BACK");
+            }
+            else if (!beenHere) {
+                //flipMotor.setPower(-power);
+                flipMotor.setVelocity(-velocity);
+                datalog.opModeStatus.set("FORWARD");
             }
 
+            if(flipMotor.getCurrentPosition()>=-200 && beenHere)
+            {
+                //flipMotor.setPower(0);
+                flipMotor.setVelocity(0);
+            }
 
             datalog.loopCounter.set(i);
 
-            datalog.time.set(cumutime);
+            //datalog.time.set(cumutime);
             datalog.velocity.set(flipMotor.getVelocity());
-            datalog.power.set(needPower);
+            datalog.power.set(flipMotor.getPower());
+            //datalog.power.set(needPower);
             datalog.position.set(flipMotor.getCurrentPosition());
 
             datalog.writeLine();
