@@ -23,6 +23,9 @@ public class OrientationDetector extends OpenCvPipeline {
     Telemetry telemetry;
     Mat mat = new Mat();
 
+    int currArea = 0;
+    double maxX, maxY,minX,minY;
+
     //region for reference only (0,0) in top left
     static final Rect SCREENSIZEBOX = new Rect( //make this the correct area
             new Point(0, 60),
@@ -90,8 +93,9 @@ public class OrientationDetector extends OpenCvPipeline {
         Mat hierarchy = new Mat();
         Imgproc.findContours(canMat, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
 
+
         //FILTER CONTOURS
-        /*MatOfPoint recordMat = new MatOfPoint();
+        MatOfPoint recordMat = new MatOfPoint();
         double recordArea = 40;
         for(MatOfPoint cont: contours)
         {
@@ -101,12 +105,24 @@ public class OrientationDetector extends OpenCvPipeline {
                 recordMat = cont;
             }
         }
+        setExtremes(recordMat.toList());
         List<MatOfPoint> recordMatList = new ArrayList<>();
         recordMatList.add(recordMat);
-        Mat contourImage = new Mat(canMat.size(), CvType.CV_8UC3, new Scalar(0, 0, 0)); // Create a black image
-        Imgproc.drawContours(contourImage, recordMatList, -1, new Scalar(255, 255, 255), 1);  // Draw contours in red color
 
-        //EXTRA EXTRA CONTOUR REFINEMENT
+        List<MatOfPoint> innerConts = new ArrayList<>();
+        innerConts.add(recordMat);
+        for(MatOfPoint cont: contours)
+        {
+            if(isInside(cont.toList()))
+            {
+                innerConts.add(cont);
+            }
+        }
+
+        Mat contourImage = new Mat(canMat.size(), CvType.CV_8UC3, new Scalar(0, 0, 0)); // Create a black image
+        Imgproc.drawContours(contourImage, innerConts, -1, new Scalar(255, 255, 255), 1);  // Draw contours in red color
+
+        //GET POINTS
         List<Point> pts = new ArrayList<>();
         for (int y = 0; y < contourImage.rows(); y++) {
             for (int x = 0; x < contourImage.cols(); x++) {
@@ -117,10 +133,10 @@ public class OrientationDetector extends OpenCvPipeline {
             }
         }
 
-        //DRAW THE OUTLINE AND OUTPUT
+        //CONVEX HULL AND VECTORIZATION
         if(pts.size()>3)
         {
-            //Imgproc.cvtColor(contourImage, contourImage, Imgproc.COLOR_GRAY2RGB);
+            //FIND HULL POINTS
             MatOfInt hullIndices = new MatOfInt();
             Imgproc.convexHull(new MatOfPoint(pts.toArray(new Point[0])), hullIndices);
             List<Integer> hull = new ArrayList<>();
@@ -131,19 +147,88 @@ public class OrientationDetector extends OpenCvPipeline {
             for (int index : hull) {
                 hullPoints.add(pts.get(index));
             }
-            MatOfPoint[] hullArray = new MatOfPoint[1];
-            hullArray[0] = new MatOfPoint();
-            hullArray[0].fromList(hullPoints);
-            Mat temp = new Mat();
-            Imgproc.polylines(contourImage, Arrays.asList(hullArray), true, new Scalar(0, 0, 255), 2);
-        }*/
+
+            //SIMPLIFY HULL
+            Point previous = hullPoints.get(1);
+            double previousSlope = slope(hullPoints.get(0), previous);
+            for(int i=2; i<hullPoints.size(); i++)
+            {
+                double currSlope = slope(previous, hullPoints.get(i));
+                if(Math.abs(currSlope-previousSlope)>0.5)
+                {
+                    previousSlope = currSlope;
+                }
+                else {
+                    hullPoints.remove(i-1);
+                    i--;
+                    previous = hullPoints.get(i);
+                    previousSlope = slope(previous, hullPoints.get(i));
+                }
+            }
+
+            //DRAW VECTORS
+            previous = hullPoints.get(0);
+            for(int i=1; i<hullPoints.size(); i++)
+            {
+                Imgproc.line(contourImage, previous, hullPoints.get(i), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
+                previous = hullPoints.get(i);
+            }
+            Imgproc.line(contourImage, hullPoints.get(hullPoints.size()-1), hullPoints.get(0), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
+        }
 
         //FIND X Y Z VECTORS
 
-
-        return canMat; //contourImage
+        return contourImage;
     }
 
+    public double slope(Point a, Point b)
+    {
+        return (b.y-a.y)/(b.x-a.x);
+    }
+    public boolean isInside(List<Point> points)
+    {
+        int innerPtsCnt = 0;
+        for(int i=0; i< points.size(); i++)
+        {
+            if(points.get(i).x<maxX && points.get(i).x>minX && points.get(i).y<maxY && points.get(i).y>minY)
+            {
+                innerPtsCnt++;
+            }
+        }
+        if(innerPtsCnt==points.size())
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public void setExtremes(List<Point> points)
+    {
+        maxX = 0;
+        maxY = 0;
+        minX = Integer.MAX_VALUE;
+        minY = Integer.MAX_VALUE;
+        for(int i=0; i< points.size(); i++)
+        {
+            Point pts = points.get(i);
+            if(pts.x>maxX)
+            {
+                maxX = pts.x;
+            }
+            if(pts.x<minX)
+            {
+                minX = pts.x;
+            }
+            if(pts.y>maxY)
+            {
+                maxY = pts.y;
+            }
+            if(pts.y<minY)
+            {
+                minY = pts.y;
+            }
+        }
+    }
 
     public double distance(Point P, Point Q)
     {
