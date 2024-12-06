@@ -47,6 +47,8 @@ public class DetectorRunner extends LinearOpMode {
 
         sleep(20);
 
+        telemetry.addData("Max Area", redDetector.recordArea);
+
         waitForStart();
 
         // region MOTORS AND SERVOS INIT STUFF

@@ -5,7 +5,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
@@ -15,42 +14,14 @@ import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 
 public class OrientationDetector extends OpenCvPipeline {
     Telemetry telemetry;
     Mat mat = new Mat();
-
-    int currArea = 0;
-    double maxX, maxY,minX,minY;
-
-    //region for reference only (0,0) in top left
-    static final Rect SCREENSIZEBOX = new Rect( //make this the correct area
-            new Point(0, 60),
-            new Point(320, 240));
-    //endregion
-
-    //region roi actual boxes
-    static final Rect LEFT_ROI = new Rect( //make this the correct area
-            new Point(100, 60),
-            new Point(170, 120));
-    static final Rect CENTER_ROI = new Rect( //make this the correct area
-            new Point(230, 70),
-            new Point(292, 170));
-    //endregion
-
-    int centerLineOffset = 0;
-    Vector2D xLine, yLine, zLine;
-
-    static double PERCENT_COLOR_THRESHOLD = 0.2;
-
     public OrientationDetector(Telemetry t) { telemetry = t; }
 
-    @Override
-    public Mat processFrame(Mat input) {
-        //region FOR REFERENCE
+    //region FOR REFERENCE
         /*Scalar lowHSVYELLOW= new Scalar(10, 0, 0);
         Scalar highHSVYELLOW = new Scalar(25, 255, 255);
 
@@ -68,15 +39,35 @@ public class OrientationDetector extends OpenCvPipeline {
 
         Scalar lowHSVWHITE= new Scalar(0, 0, 80);
         Scalar highHSVWHITE = new Scalar(180, 30, 255);*/
-        //endregion
+    //endregion
+    //region for reference only (0,0) in top left
+    static final Rect SCREENSIZEBOX = new Rect( //make this the correct area
+            new Point(0, 60),
+            new Point(320, 240));
+    //endregion
+    //region roi actual boxes
+    static final Rect LEFT_ROI = new Rect( //make this the correct area
+            new Point(100, 60),
+            new Point(170, 120));
+    static final Rect CENTER_ROI = new Rect( //make this the correct area
+            new Point(230, 70),
+            new Point(292, 170));
+    //endregion
+    Vector2D xLine, yLine, zLine;
+    double objectDistance, centerLineOffset = 0, objectAngle;
+    double recordArea, currArea = 0;
+    double maxX, maxY,minX,minY;
+    @Override
+    public Mat processFrame(Mat input) {
+        //region GET COLORS
         Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGB2HSV);
 
-        //GET COLORS
         Scalar lowHSVRED = new Scalar(-20, 60, 30);
         Scalar highHSVRED = new Scalar(7, 255, 255);
         Core.inRange(mat, lowHSVRED, highHSVRED, mat);
+        //endregion
 
-        //GET CONTOURS
+        //region GET CONTOURS
         Mat canMat = new Mat();
         Imgproc.GaussianBlur(mat, canMat, new Size(5.0, 15.0), 0.00);
         Imgproc.Canny(canMat, canMat, 10, 10); //100,200
@@ -92,11 +83,11 @@ public class OrientationDetector extends OpenCvPipeline {
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
         Imgproc.findContours(canMat, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+        //endregion
 
-
-        //FILTER CONTOURS
+        //region FILTER OUT EXTERNAL CONTOURS
         MatOfPoint recordMat = new MatOfPoint();
-        double recordArea = 40;
+        recordArea = 0;
         for(MatOfPoint cont: contours)
         {
             if(Imgproc.contourArea(cont)>recordArea)
@@ -105,39 +96,41 @@ public class OrientationDetector extends OpenCvPipeline {
                 recordMat = cont;
             }
         }
-        setExtremes(recordMat.toList());
+        //setExtremes(recordMat.toList());
         List<MatOfPoint> recordMatList = new ArrayList<>();
         recordMatList.add(recordMat);
 
         List<MatOfPoint> innerConts = new ArrayList<>();
         innerConts.add(recordMat);
-        for(MatOfPoint cont: contours)
+        /*for(MatOfPoint cont: contours)
         {
             if(isInside(cont.toList()))
             {
                 innerConts.add(cont);
             }
-        }
-
+        }*/
         Mat contourImage = new Mat(canMat.size(), CvType.CV_8UC3, new Scalar(0, 0, 0)); // Create a black image
         Imgproc.drawContours(contourImage, innerConts, -1, new Scalar(255, 255, 255), 1);  // Draw contours in red color
+        //endregion
 
-        //GET POINTS
+        //region GET ALL CONTOUR POINTS
+        /*Imgproc.threshold(contourImage, contourImage, 100, 255, Imgproc.THRESH_BINARY);
         List<Point> pts = new ArrayList<>();
         for (int y = 0; y < contourImage.rows(); y++) {
             for (int x = 0; x < contourImage.cols(); x++) {
-                if (contourImage.get(y, x)[0] > 0)
+                if (contourImage.get(y, x)[0]!= 0)
                 {
                     pts.add(new Point(x, y));
                 }
             }
-        }
+        }*/
+        //endregion
 
-        //CONVEX HULL AND VECTORIZATION
-        if(pts.size()>3)
+        if(!contours.isEmpty())
         {
-            //FIND HULL POINTS
-            MatOfInt hullIndices = new MatOfInt();
+            List<Point> pts = new ArrayList<>(contours.get(0).toList());
+            //region FIND HULL POINTS
+            /*MatOfInt hullIndices = new MatOfInt();
             Imgproc.convexHull(new MatOfPoint(pts.toArray(new Point[0])), hullIndices);
             List<Integer> hull = new ArrayList<>();
             for (int i = 0; i < hullIndices.rows(); i++) {
@@ -146,44 +139,70 @@ public class OrientationDetector extends OpenCvPipeline {
             List<Point> hullPoints = new ArrayList<>();
             for (int index : hull) {
                 hullPoints.add(pts.get(index));
-            }
+            }*/
+            //endregion
 
-            //SIMPLIFY HULL
-            Point previous = hullPoints.get(1);
-            double previousSlope = slope(hullPoints.get(0), previous);
+            //region ANGLE BASED HULL SIMPLIFICATION
+            Point prevPts = pts.get(1);
+            double previousAngle = angleBtwn(pts.get(0), prevPts);
+            for(int i=2; i<pts.size(); i++)
+            {
+                double currAngle = angleBtwn(prevPts, pts.get(i));
+                if(Math.abs(currAngle-previousAngle)>30) //big change
+                {
+                    previousAngle = currAngle;
+                }
+                else { //remove redundant
+                    i--;
+                    pts.remove(i);
+                    prevPts = pts.get(i);
+                    previousAngle = angleBtwn(pts.get(i-1), pts.get(i));
+                }
+            }
+            //endregion
+
+            //region DISTANCE BASED HULL SIMPLIFICATION
+            /*prevPts = hullPoints.get(1);
+            double previousDistance = distance(hullPoints.get(0), prevPts);
             for(int i=2; i<hullPoints.size(); i++)
             {
-                double currSlope = slope(previous, hullPoints.get(i));
-                if(Math.abs(currSlope-previousSlope)>0.5)
+                double currDistance = distance(prevPts, hullPoints.get(i));
+                if(Math.abs(currDistance-previousDistance)>50) //big change
                 {
-                    previousSlope = currSlope;
+                    previousDistance = currDistance;
                 }
-                else {
-                    hullPoints.remove(i-1);
+                else { //remove redundant
                     i--;
-                    previous = hullPoints.get(i);
-                    previousSlope = slope(previous, hullPoints.get(i));
+                    hullPoints.remove(i);
+                    prevPts = hullPoints.get(i);
+                    previousDistance= distance(hullPoints.get(i-1), hullPoints.get(i));
                 }
-            }
+            }*/
+            //endregion
 
-            //DRAW VECTORS
-            previous = hullPoints.get(0);
-            for(int i=1; i<hullPoints.size(); i++)
+            //repeat to get only 4 or 6 hull pts
+
+            //region DRAW VECTORS
+            prevPts = pts.get(0);
+            for(int i=1; i<pts.size(); i++)
             {
-                Imgproc.line(contourImage, previous, hullPoints.get(i), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
-                previous = hullPoints.get(i);
+                Imgproc.line(contourImage, prevPts, pts.get(i), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
+                prevPts = pts.get(i);
             }
-            Imgproc.line(contourImage, hullPoints.get(hullPoints.size()-1), hullPoints.get(0), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
+            Imgproc.line(contourImage, pts.get(pts.size()-1), pts.get(0), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
+            //endregion
         }
-
-        //FIND X Y Z VECTORS
-
         return contourImage;
     }
-
-    public double slope(Point a, Point b)
+    public double angleBtwn(Point a, Point b)
     {
-        return (b.y-a.y)/(b.x-a.x);
+        double angle = Math.toDegrees(Math.atan2(b.y - a.y, b.x - a.x));
+        if (angle < 0) angle += 360;
+        return angle;
+    }
+    public double distance(Point P, Point Q)
+    {
+        return Math.sqrt(((Q.x-P.x)*(Q.x-P.x)) + ((Q.y-P.y)*(Q.y-P.y)));
     }
     public boolean isInside(List<Point> points)
     {
@@ -201,7 +220,6 @@ public class OrientationDetector extends OpenCvPipeline {
         }
         return false;
     }
-
     public void setExtremes(List<Point> points)
     {
         maxX = 0;
@@ -229,17 +247,6 @@ public class OrientationDetector extends OpenCvPipeline {
             }
         }
     }
-
-    public double distance(Point P, Point Q)
-    {
-        return Math.sqrt(((Q.x-P.x)*(Q.x-P.x)) + ((Q.y-P.y)*(Q.y-P.y)));
-    }
-
-    public int centerLineOffset()
-    {
-        return centerLineOffset;
-    }
-
     public Vector2D getxLine()
     {
         return xLine;
@@ -249,6 +256,13 @@ public class OrientationDetector extends OpenCvPipeline {
     }
     public Vector2D getzLine() {
         return zLine;
+    }
+    public double getCenterLineOffset()
+    {
+        return centerLineOffset;
+    }
+    public double getArea(){
+        return recordArea;
     }
 }
 
