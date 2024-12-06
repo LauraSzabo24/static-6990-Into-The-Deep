@@ -87,7 +87,7 @@ public class OrientationDetector extends OpenCvPipeline {
 
         //region FILTER OUT EXTERNAL CONTOURS
         MatOfPoint recordMat = new MatOfPoint();
-        recordArea = 0;
+        recordArea = 100;
         for(MatOfPoint cont: contours)
         {
             if(Imgproc.contourArea(cont)>recordArea)
@@ -96,94 +96,67 @@ public class OrientationDetector extends OpenCvPipeline {
                 recordMat = cont;
             }
         }
-        //setExtremes(recordMat.toList());
         List<MatOfPoint> recordMatList = new ArrayList<>();
         recordMatList.add(recordMat);
-
-        List<MatOfPoint> innerConts = new ArrayList<>();
-        innerConts.add(recordMat);
-        /*for(MatOfPoint cont: contours)
-        {
-            if(isInside(cont.toList()))
-            {
-                innerConts.add(cont);
-            }
-        }*/
         Mat contourImage = new Mat(canMat.size(), CvType.CV_8UC3, new Scalar(0, 0, 0)); // Create a black image
-        Imgproc.drawContours(contourImage, innerConts, -1, new Scalar(255, 255, 255), 1);  // Draw contours in red color
+        Imgproc.drawContours(contourImage, recordMatList, -1, new Scalar(255, 255, 255), 1);  // Draw contours in red color
         //endregion
 
-        //region GET ALL CONTOUR POINTS
-        /*Imgproc.threshold(contourImage, contourImage, 100, 255, Imgproc.THRESH_BINARY);
-        List<Point> pts = new ArrayList<>();
-        for (int y = 0; y < contourImage.rows(); y++) {
-            for (int x = 0; x < contourImage.cols(); x++) {
-                if (contourImage.get(y, x)[0]!= 0)
-                {
-                    pts.add(new Point(x, y));
-                }
-            }
-        }*/
-        //endregion
-
-        if(!contours.isEmpty())
+        if(!contours.isEmpty() && recordMatList.get(0).toList().size()>3)
         {
-            List<Point> pts = new ArrayList<>(contours.get(0).toList());
-            //region FIND HULL POINTS
-            /*MatOfInt hullIndices = new MatOfInt();
-            Imgproc.convexHull(new MatOfPoint(pts.toArray(new Point[0])), hullIndices);
-            List<Integer> hull = new ArrayList<>();
-            for (int i = 0; i < hullIndices.rows(); i++) {
-                hull.add((int) hullIndices.get(i, 0)[0]);
-            }
-            List<Point> hullPoints = new ArrayList<>();
-            for (int index : hull) {
-                hullPoints.add(pts.get(index));
-            }*/
-            //endregion
-
-            //region ANGLE BASED HULL SIMPLIFICATION
-            Point prevPts = pts.get(1);
+            List<Point> pts = new ArrayList<>(recordMatList.get(0).toList());
+            //region ANGLE BASED SIMPLIFICATION
+           /* Point prevPts = pts.get(1);
+            Point prevImportante = pts.get(1);
             double previousAngle = angleBtwn(pts.get(0), prevPts);
-            for(int i=2; i<pts.size(); i++)
-            {
+            double sumAngleChange = 0;
+            for (int i = 2; i < pts.size(); i++) {
                 double currAngle = angleBtwn(prevPts, pts.get(i));
-                if(Math.abs(currAngle-previousAngle)>30) //big change
-                {
-                    previousAngle = currAngle;
+                double angleDiff = currAngle - previousAngle;
+                if (angleDiff > 180) {
+                    angleDiff = 360 - angleDiff;
                 }
-                else { //remove redundant
+                sumAngleChange += angleDiff;
+
+                if (Math.abs(sumAngleChange) / distance(prevImportante, pts.get(i)) >= 20) {
+                    previousAngle = currAngle;
+                    sumAngleChange = 0;
+                    prevImportante = pts.get(i);
+                } else {
                     i--;
                     pts.remove(i);
-                    prevPts = pts.get(i);
-                    previousAngle = angleBtwn(pts.get(i-1), pts.get(i));
+                    previousAngle = angleBtwn(pts.get(i - 1), prevPts);
                 }
-            }
-            //endregion
-
-            //region DISTANCE BASED HULL SIMPLIFICATION
-            /*prevPts = hullPoints.get(1);
-            double previousDistance = distance(hullPoints.get(0), prevPts);
-            for(int i=2; i<hullPoints.size(); i++)
-            {
-                double currDistance = distance(prevPts, hullPoints.get(i));
-                if(Math.abs(currDistance-previousDistance)>50) //big change
-                {
-                    previousDistance = currDistance;
-                }
-                else { //remove redundant
-                    i--;
-                    hullPoints.remove(i);
-                    prevPts = hullPoints.get(i);
-                    previousDistance= distance(hullPoints.get(i-1), hullPoints.get(i));
-                }
+                prevPts = pts.get(i);
             }*/
-            //endregion
 
-            //repeat to get only 4 or 6 hull pts
+
+            //endregion
+            double epsi = 8;
+            pts = ramerDouglas(pts, epsi);
+            if(pts.size()!= 4 || pts.size() !=6){
+                //region DISTANCE BASED SIMPLIFICATION
+                /*Point prevPts = pts.get(1);
+                double previousDistance = distance(pts.get(0), prevPts);
+                for(int i=2; i<pts.size(); i++)
+                {
+                    double currDistance = distance(prevPts, pts.get(i));
+                    if(Math.abs(currDistance-previousDistance)>50) //big change
+                    {
+                        previousDistance = currDistance;
+                    }
+                    else { //remove redundant
+                        i--;
+                        pts.remove(i);
+                        previousDistance= distance(pts.get(i-1), prevPts);
+                    }
+                    prevPts = pts.get(i);
+                }*/
+                //endregion
+            }
 
             //region DRAW VECTORS
-            prevPts = pts.get(0);
+            Point prevPts = pts.get(0);
             for(int i=1; i<pts.size(); i++)
             {
                 Imgproc.line(contourImage, prevPts, pts.get(i), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
@@ -193,6 +166,35 @@ public class OrientationDetector extends OpenCvPipeline {
             //endregion
         }
         return contourImage;
+    }
+    public static List<Point> ramerDouglas(List<Point> points, double epsilon) {
+        double maxDistance = 0;
+        int index = 0;
+        for (int i = 1; i < points.size() - 1; i++) {
+            double d = perpendicularDistance(points.get(i), points.get(0), points.get(points.size() - 1));
+            if (d > maxDistance) {
+                maxDistance = d;
+                index = i;
+            }
+        }
+        List<Point> result = new ArrayList<>();
+        if (maxDistance > epsilon) {
+            List<Point> segment1 = new ArrayList<>(points.subList(0, index + 1));
+            List<Point> segment2 = new ArrayList<>(points.subList(index, points.size()));
+            List<Point> recursiveResult1 = ramerDouglas(segment1, epsilon);
+            List<Point> recursiveResult2 = ramerDouglas(segment2, epsilon);
+            result.addAll(recursiveResult1.subList(0, recursiveResult1.size() - 1)); // Avoid duplicating the middle point
+            result.addAll(recursiveResult2);
+        } else {
+            result.add(points.get(0));
+            result.add(points.get(points.size() - 1));
+        }
+        return result;
+    }
+    private static double perpendicularDistance(Point p, Point start, Point end) {
+        double numer = Math.abs((end.y - start.y) * p.x - (end.x - start.x) * p.y + end.x * start.y - end.y * start.x);
+        double denom = Math.sqrt(Math.pow(end.y - start.y, 2) + Math.pow(end.x - start.x, 2));
+        return numer / denom;
     }
     public double angleBtwn(Point a, Point b)
     {
