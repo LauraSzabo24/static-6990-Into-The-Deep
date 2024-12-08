@@ -102,72 +102,66 @@ public class OrientationDetector extends OpenCvPipeline {
         Imgproc.drawContours(contourImage, recordMatList, -1, new Scalar(255, 255, 255), 1);  // Draw contours in red color
         //endregion
 
-        if(!contours.isEmpty() && recordMatList.get(0).toList().size()>3)
+        if(!contours.isEmpty() && recordMatList.get(0).toList().size()>10)
         {
             List<Point> pts = new ArrayList<>(recordMatList.get(0).toList());
-            //region ANGLE BASED SIMPLIFICATION
-           /* Point prevPts = pts.get(1);
-            Point prevImportante = pts.get(1);
-            double previousAngle = angleBtwn(pts.get(0), prevPts);
-            double sumAngleChange = 0;
-            for (int i = 2; i < pts.size(); i++) {
-                double currAngle = angleBtwn(prevPts, pts.get(i));
-                double angleDiff = currAngle - previousAngle;
-                if (angleDiff > 180) {
-                    angleDiff = 360 - angleDiff;
-                }
-                sumAngleChange += angleDiff;
-
-                if (Math.abs(sumAngleChange) / distance(prevImportante, pts.get(i)) >= 20) {
-                    previousAngle = currAngle;
-                    sumAngleChange = 0;
-                    prevImportante = pts.get(i);
-                } else {
-                    i--;
-                    pts.remove(i);
-                    previousAngle = angleBtwn(pts.get(i - 1), prevPts);
-                }
-                prevPts = pts.get(i);
-            }*/
-
-
-            //endregion
-            double epsi = 8;
+            /*double epsi = 10;
             pts = ramerDouglas(pts, epsi);
-            if(pts.size()!= 4 || pts.size() !=6){
-                //region DISTANCE BASED SIMPLIFICATION
-                /*Point prevPts = pts.get(1);
-                double previousDistance = distance(pts.get(0), prevPts);
-                for(int i=2; i<pts.size(); i++)
+            pts.set(pts.size()-1, pts.get(0));*/
+
+            //region ANGLE BASED SIMPLIFICATION
+            Point forPoint = pts.get(1);
+            Point backPoint = pts.get(0);
+            double previousAngle = angleBtwn(backPoint, forPoint);
+            backPoint = forPoint;
+
+            boolean ptsAdded = false;
+            double localRecord = 0;
+            Point localRecordPts = pts.get(0);
+            List<Point> filtered = new ArrayList<>();
+
+            for (int i = 0; i < pts.size(); i+=1) {
+                forPoint=pts.get(i);
+                double distance = distance(backPoint, forPoint);
+
+                if (distance>= 10)
                 {
-                    double currDistance = distance(prevPts, pts.get(i));
-                    if(Math.abs(currDistance-previousDistance)>50) //big change
+                    double currAngle = angleBtwn(backPoint, forPoint);
+                    filtered.add(forPoint);
+                    filtered.add(backPoint);
+                    /*if(angleDiff>localRecord)
                     {
-                        previousDistance = currDistance;
-                    }
-                    else { //remove redundant
-                        i--;
-                        pts.remove(i);
-                        previousDistance= distance(pts.get(i-1), prevPts);
-                    }
-                    prevPts = pts.get(i);
+                        localRecord = angleDiff;
+                        localRecordPts = pts.get(i);
+                        ptsAdded = false;
+                    }*/
+                }
+                /*else if (!ptsAdded)
+                {
+                    ptsAdded = true;
+                    filtered.add(localRecordPts);
+                    localRecord = 0;
                 }*/
-                //endregion
+                backPoint = forPoint;
             }
+            //endregion
 
             //region DRAW VECTORS
-            Point prevPts = pts.get(0);
-            for(int i=1; i<pts.size(); i++)
-            {
-                Imgproc.line(contourImage, prevPts, pts.get(i), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
-                prevPts = pts.get(i);
+            if(!filtered.isEmpty()) {
+                Point prevPts = filtered.get(0);
+                Imgproc.drawMarker(contourImage, filtered.get(0), new Scalar((int) (255), (int) (0), (int) (0)));
+                for (int i = 1; i < filtered.size(); i++) {
+                    //Imgproc.line(contourImage, prevPts, filtered.get(i), new Scalar((int) (Math.random() * 255), (int) (Math.random() * 255), (int) (Math.random() * 255)), 2);
+                    Imgproc.drawMarker(contourImage, filtered.get(i), new Scalar((int) (0), (int) (255), (int) (0)));
+                    prevPts = filtered.get(i);
+                }
+                //Imgproc.line(contourImage, filtered.get(filtered.size() - 1), filtered.get(0), new Scalar((int) (255), (int) (0), (int) (0)), 3);
             }
-            Imgproc.line(contourImage, pts.get(pts.size()-1), pts.get(0), new Scalar((int)(Math.random()*255), (int)(Math.random()*255), (int)(Math.random()*255)), 2);
             //endregion
         }
         return contourImage;
     }
-    public static List<Point> ramerDouglas(List<Point> points, double epsilon) {
+    /*public static List<Point> ramerDouglas(List<Point> points, double epsilon) {
         double maxDistance = 0;
         int index = 0;
         for (int i = 1; i < points.size() - 1; i++) {
@@ -195,11 +189,14 @@ public class OrientationDetector extends OpenCvPipeline {
         double numer = Math.abs((end.y - start.y) * p.x - (end.x - start.x) * p.y + end.x * start.y - end.y * start.x);
         double denom = Math.sqrt(Math.pow(end.y - start.y, 2) + Math.pow(end.x - start.x, 2));
         return numer / denom;
-    }
+    }*/
     public double angleBtwn(Point a, Point b)
     {
         double angle = Math.toDegrees(Math.atan2(b.y - a.y, b.x - a.x));
-        if (angle < 0) angle += 360;
+        if (angle < 0)
+        {
+            angle += 360;
+        }
         return angle;
     }
     public double distance(Point P, Point Q)
