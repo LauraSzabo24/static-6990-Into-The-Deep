@@ -87,7 +87,7 @@ public class OrientationDetector extends OpenCvPipeline {
 
         //region FILTER OUT EXTERNAL CONTOURS
         MatOfPoint recordMat = new MatOfPoint();
-        recordArea = 100;
+        recordArea = 400;
         for(MatOfPoint cont: contours)
         {
             if(Imgproc.contourArea(cont)>recordArea)
@@ -99,62 +99,118 @@ public class OrientationDetector extends OpenCvPipeline {
         List<MatOfPoint> recordMatList = new ArrayList<>();
         recordMatList.add(recordMat);
         Mat contourImage = new Mat(canMat.size(), CvType.CV_8UC3, new Scalar(0, 0, 0)); // Create a black image
-        Imgproc.drawContours(contourImage, recordMatList, -1, new Scalar(255, 255, 255), 1);  // Draw contours in red color
+        Imgproc.drawContours(contourImage, recordMatList, -1, new Scalar(255, 255, 255), 1);
         //endregion
 
         if(!contours.isEmpty() && recordMatList.get(0).toList().size()>10)
         {
-            List<Point> pts = new ArrayList<>(recordMatList.get(0).toList());
-            /*double epsi = 10;
-            pts = ramerDouglas(pts, epsi);
-            pts.set(pts.size()-1, pts.get(0));*/
+            //region IMPORTANT POINTS
+            Point lowest = new Point();
+            double lowRecord = 0;
+            Point highest = new Point();
+            double highRecord = Integer.MAX_VALUE;
 
-            //region ANGLE BASED SIMPLIFICATION
-            Point forPoint = pts.get(1);
-            Point backPoint = pts.get(0);
-            double previousAngle = angleBtwn(backPoint, forPoint);
-            backPoint = forPoint;
+            int startCol = 0;
+            Point highStart = new Point();
+            Point lowStart = new Point();
 
-            boolean ptsAdded = false;
-            double localRecord = 0;
-            Point localRecordPts = pts.get(0);
-            List<Point> filtered = new ArrayList<>();
-
-            for (int i = 0; i < pts.size(); i+=1) {
-                forPoint=pts.get(i);
-                double distance = distance(backPoint, forPoint);
-
-                if (distance>= 10)
-                {
-                    double currAngle = angleBtwn(backPoint, forPoint);
-                    filtered.add(forPoint);
-                    filtered.add(backPoint);
-                    /*if(angleDiff>localRecord)
-                    {
-                        localRecord = angleDiff;
-                        localRecordPts = pts.get(i);
-                        ptsAdded = false;
-                    }*/
-                }
-                /*else if (!ptsAdded)
-                {
-                    ptsAdded = true;
-                    filtered.add(localRecordPts);
-                    localRecord = 0;
-                }*/
-                backPoint = forPoint;
-            }
+            int endCol = 0;
+            Point highEnd = new Point();
+            Point lowEnd = new Point();
             //endregion
 
-            //region DRAW VECTORS
-            if(!filtered.isEmpty()) {
-                Point prevPts = filtered.get(0);
-                Imgproc.drawMarker(contourImage, filtered.get(0), new Scalar((int) (255), (int) (0), (int) (0)));
-                for (int i = 1; i < filtered.size(); i++) {
-                    //Imgproc.line(contourImage, prevPts, filtered.get(i), new Scalar((int) (Math.random() * 255), (int) (Math.random() * 255), (int) (Math.random() * 255)), 2);
-                    Imgproc.drawMarker(contourImage, filtered.get(i), new Scalar((int) (0), (int) (255), (int) (0)));
-                    prevPts = filtered.get(i);
+            //GET EVERYTHING ELSE
+            List<Point> pts = new ArrayList<>();
+            for(int c=0; c<contourImage.cols(); c++)
+            {
+                for(int r=0; r<contourImage.rows(); r++)
+                {
+                    if(contourImage.get(r,c)[0]==255 && contourImage.get(r,c)[1]==255 && contourImage.get(r,c)[2]==255)
+                    {
+                        if(startCol==0)
+                        {
+                            startCol = c;
+                        }
+
+                        if(r>lowRecord)
+                        {
+                            lowRecord = r;
+                            lowest = new Point(c,r);
+                            if(Math.abs(startCol-c)<4)
+                            {
+                                lowStart = lowest;
+                            }
+                        }
+                        if(r<highRecord)
+                        {
+                            highRecord = r;
+                            highest = new Point(c,r);
+                            if(Math.abs(startCol-c)<4)
+                            {
+                                highStart = highest;
+                            }
+                        }
+                    }
                 }
+            }
+
+            //GET END POINTS
+            lowRecord = 0;
+            highRecord = Integer.MAX_VALUE;
+            boolean found = false;
+            IfoundIt:
+            for(int c=contourImage.cols()-1; c>0; c--)
+            {
+                for(int r=contourImage.rows()-1; r>0; r--)
+                {
+                    if(contourImage.get(r,c)[0]==255 && contourImage.get(r,c)[1]==255 && contourImage.get(r,c)[2]==255)
+                    {
+                        if(endCol==0)
+                        {
+                            endCol = c;
+                        }
+
+                        if(r>lowRecord)
+                        {
+                            lowRecord = r;
+                            if(Math.abs(endCol-c)<15)
+                            {
+                                lowEnd = new Point(c,r);
+                                found = true;
+                            }
+                            else if(found){
+                                break IfoundIt;
+                            }
+                        }
+                        if(r<highRecord)
+                        {
+                            highRecord = r;
+                            if(Math.abs(endCol-c)<3)
+                            {
+                                highEnd = new Point(c,r);
+                            }
+                            else if(found){
+                                break IfoundIt;
+                            }
+                        }
+                    }
+                }
+            }
+            pts.add(lowest);
+            pts.add(highest);
+            pts.add(highStart);
+            pts.add(lowStart);
+            pts.add(highEnd);
+            pts.add(lowEnd);
+
+            //region DRAW VECTORS
+            if(!pts.isEmpty()) {
+                Imgproc.drawMarker(contourImage, pts.get(0), new Scalar((int) (255), (int) (0), (int) (0)));
+                Imgproc.drawMarker(contourImage, pts.get(1), new Scalar((int) (255), (int) (0), (int) (0)));
+                Imgproc.drawMarker(contourImage, pts.get(2), new Scalar((int) (0), (int) (255), (int) (0)));
+                Imgproc.drawMarker(contourImage, pts.get(3), new Scalar((int) (0), (int) (255), (int) (0)));
+                Imgproc.drawMarker(contourImage, pts.get(4), new Scalar((int) (0), (int) (0), (int) (255)));
+                Imgproc.drawMarker(contourImage, pts.get(5), new Scalar((int) (255), (int) (0), (int) (255)));
                 //Imgproc.line(contourImage, filtered.get(filtered.size() - 1), filtered.get(0), new Scalar((int) (255), (int) (0), (int) (0)), 3);
             }
             //endregion
@@ -190,6 +246,7 @@ public class OrientationDetector extends OpenCvPipeline {
         double denom = Math.sqrt(Math.pow(end.y - start.y, 2) + Math.pow(end.x - start.x, 2));
         return numer / denom;
     }*/
+
     public double angleBtwn(Point a, Point b)
     {
         double angle = Math.toDegrees(Math.atan2(b.y - a.y, b.x - a.x));
