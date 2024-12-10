@@ -111,50 +111,97 @@ public class OrientationDetector extends OpenCvPipeline {
             double highRecord = Integer.MAX_VALUE;
 
             int startCol = 0;
+            int startRow = 0;
+            int rowCounter = 0;
             Point highStart = new Point();
             Point lowStart = new Point();
 
             int endCol = 0;
             Point highEnd = new Point();
             Point lowEnd = new Point();
+
+            Point startHighAnchor = new Point();
+            Point startLowAnchor = new Point();
             //endregion
 
-            //GET EVERYTHING ELSE
+            //GET GENERAL HIGHEST AND LOWEST POINTS
             List<Point> pts = new ArrayList<>();
+            List<Point> lowPoints = new ArrayList<>();
+            List<Point> highPoints = new ArrayList<>();
             for(int c=0; c<contourImage.cols(); c++)
             {
                 for(int r=0; r<contourImage.rows(); r++)
                 {
                     if(contourImage.get(r,c)[0]==255 && contourImage.get(r,c)[1]==255 && contourImage.get(r,c)[2]==255)
                     {
+                        //region START COLUMN SHENANIGANS
                         if(startCol==0)
                         {
                             startCol = c;
+                            startRow = r;
                         }
+                        else if(Math.abs(startCol-c)==3 && rowCounter==0)
+                        {
+                            startHighAnchor = new Point(c,r);
+                            rowCounter++;
+                        }
+                        else if(Math.abs(startCol-c)==3 && rowCounter==1)
+                        {
+                            startLowAnchor = new Point(c,r);
+                            rowCounter++;
+                        }
+                        //endregion
 
                         if(r>lowRecord)
                         {
                             lowRecord = r;
                             lowest = new Point(c,r);
-                            if(Math.abs(startCol-c)<4)
+                            if(Math.abs(startCol-c)<20 && Math.abs(startCol-c)>6)
                             {
-                                lowStart = lowest;
+                                lowPoints.add(lowest);
                             }
                         }
                         if(r<highRecord)
                         {
                             highRecord = r;
                             highest = new Point(c,r);
-                            if(Math.abs(startCol-c)<4)
+                            if(Math.abs(startCol-c)<15)
                             {
-                                highStart = highest;
+                                highPoints.add(highest);
                             }
                         }
                     }
                 }
             }
 
-            //GET END POINTS
+            //region FIND LOWEST AND HIGHEST POINTS
+            double recordAngl = -1;
+            for(int i=0; i<lowPoints.size()-3; i++)
+            {
+                double currAngl = Math.abs(angleBtwn(lowPoints.get(i), lowPoints.get(i+3)));
+                if(currAngl>recordAngl)
+                {
+                    lowStart = lowPoints.get(i);
+                    recordAngl = currAngl;
+                }
+            }
+
+            highStart = new Point(startCol, startRow);
+            double recordAnglDiff = Math.abs(angleBtwn(highStart, startLowAnchor) - angleBtwn(highStart, startHighAnchor));
+            for(int i=3; i<highPoints.size()-3; i++)
+            {
+                double currForAngl = Math.abs(angleBtwn(highPoints.get(i), highPoints.get(i+3)));
+                double currBackAngle = Math.abs(angleBtwn(highPoints.get(i), highPoints.get(i-3)));
+                double currAnglDiff = Math.abs(currBackAngle-currForAngl);
+                if(currAnglDiff>recordAnglDiff)
+                {
+                    highStart = highPoints.get(i);
+                    recordAnglDiff = currAnglDiff;
+                }
+            }
+            //endregion
+
+            //region GET END POINTS
             lowRecord = 0;
             highRecord = Integer.MAX_VALUE;
             boolean found = false;
@@ -196,6 +243,7 @@ public class OrientationDetector extends OpenCvPipeline {
                     }
                 }
             }
+            //endregion
             pts.add(lowest);
             pts.add(highest);
             pts.add(highStart);
@@ -205,12 +253,12 @@ public class OrientationDetector extends OpenCvPipeline {
 
             //region DRAW VECTORS
             if(!pts.isEmpty()) {
-                Imgproc.drawMarker(contourImage, pts.get(0), new Scalar((int) (255), (int) (0), (int) (0)));
-                Imgproc.drawMarker(contourImage, pts.get(1), new Scalar((int) (255), (int) (0), (int) (0)));
-                Imgproc.drawMarker(contourImage, pts.get(2), new Scalar((int) (0), (int) (255), (int) (0)));
-                Imgproc.drawMarker(contourImage, pts.get(3), new Scalar((int) (0), (int) (255), (int) (0)));
-                Imgproc.drawMarker(contourImage, pts.get(4), new Scalar((int) (0), (int) (0), (int) (255)));
-                Imgproc.drawMarker(contourImage, pts.get(5), new Scalar((int) (255), (int) (0), (int) (255)));
+                Imgproc.drawMarker(contourImage, pts.get(0), new Scalar((int) (255), (int) (0), (int) (0))); //lowest-red
+                Imgproc.drawMarker(contourImage, pts.get(1), new Scalar((int) (255), (int) (100), (int) (100))); //highest-brown
+                Imgproc.drawMarker(contourImage, pts.get(2), new Scalar((int) (0), (int) (255), (int) (0)));  //highStart-green
+                Imgproc.drawMarker(contourImage, pts.get(3), new Scalar((int) (255), (int) (255), (int) (0)));  //lowStart-yellow
+                Imgproc.drawMarker(contourImage, pts.get(4), new Scalar((int) (0), (int) (0), (int) (255)));  //highEnd-blue
+                Imgproc.drawMarker(contourImage, pts.get(5), new Scalar((int) (255), (int) (0), (int) (255)));  //lowEnd-purple
                 //Imgproc.line(contourImage, filtered.get(filtered.size() - 1), filtered.get(0), new Scalar((int) (255), (int) (0), (int) (0)), 3);
             }
             //endregion
