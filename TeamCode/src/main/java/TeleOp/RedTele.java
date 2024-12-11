@@ -85,7 +85,8 @@ public class RedTele extends LinearOpMode {
         FREE,
         PICKUP,
         LOW,
-        HIGH
+        HIGH,
+        HOME
     }
     private enum speedControlState
     {
@@ -147,9 +148,8 @@ public class RedTele extends LinearOpMode {
     }
     public void movementInit()
     {
-
         wristServo.setPosition(0.39);
-        clawServo.setPosition(0.25);
+        clawServo.setPosition(0.4);
         spinnerServo.setPosition(0.26);
         flpPosTarget = -200;
         extTarget = 0;
@@ -272,10 +272,10 @@ public class RedTele extends LinearOpMode {
         {
             if(clawIH)
             {
-                clawServo.setPosition(0.6);
+                clawServo.setPosition(0.4);
             }
             else {
-                clawServo.setPosition(0.25);
+                clawServo.setPosition(0);
             }
             clawIH = !clawIH;
         }
@@ -335,13 +335,13 @@ public class RedTele extends LinearOpMode {
         //endregion
 
         //region EXTENDER
-        if(gamepad2.dpad_up && extTarget<=1500)
+        if(gamepad2.dpad_up && extTarget<=1600)
         {
             telemetry.addLine("ext UP");
             currentState = poseControlState.FREE;
-            if(extTarget+extAddition>=1500-extAddition)
+            if(extTarget+extAddition>=1600-extAddition)
             {
-                extTarget+=Math.abs(Math.abs(extTarget)-1500);
+                extTarget+=Math.abs(Math.abs(extTarget)-1600);
             }
             else {
                 extTarget+=extAddition;
@@ -393,54 +393,135 @@ public class RedTele extends LinearOpMode {
     public void setStates()
     {
         //region HIGH POSITION
-        /*if(gameModeB!= controlStateB.HIGH && currG2.y && !oldG2.y)
+        if(currentState!= poseControlState.HIGH && currG2.y && !oldG2.y)
         {
             telemetry.addLine("TO HIGH POSITION");
-            if(flpPosTarget>-700) {
+            currentState = poseControlState.HIGH;
+            if(flpPosTarget>-2000) {
+                extTarget = 1600;
+                spinnerServo.setPosition(0.215);
+                wristServo.setPosition(0.8194);
                 jerkTimer.reset();
-                while(jerkTimer.time() < 0.2) {
-                    flpPosTarget = -740;
+                while(jerkTimer.time() < 0.5) {
+                    flpPosTarget = -1650;
                     flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
                 }
             }
             else {
-                gameModeB = controlStateB.HIGH;
                 jerkTimer.reset();
-                while (jerkTimer.time() < 0.5) {
+                while(jerkTimer.time() < 0.5) {
                     extTarget = 0;
-                    flpTarget = -740;
-                    flpCONTROLLER();
                     extCONTROLLER();
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
                 }
+                armMotor.setPower(0);
 
+                spinnerServo.setPosition(0.215);
+                wristServo.setPosition(0.8194);
                 jerkTimer.reset();
-                while (jerkTimer.time() < 0.5) {
-                    extTarget = 1500;
-                    spinnerServo.setPosition(0.6989);
-                    wristServo.setPosition(0.174); //0.6183
+                while(jerkTimer.time() < 0.5) {
+                    flpPosTarget = -1650;
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+                }
+                jerkTimer.reset();
+                while(jerkTimer.time() < 0.5) {
+                    extTarget = 1600;
                     extCONTROLLER();
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+
                 }
             }
-        }*/
+        }
         //endregion
 
         //region LOW POSITION
-       /* else if(gameModeB!= controlStateB.LOW && currG2.x && !oldG2.x)
+        if(currentState!= poseControlState.LOW && currG2.right_bumper && !oldG2.right_bumper)
         {
-            divider = 4;
-            telemetry.addLine("TO LOW POSITION");
-            gameModeB = controlStateB.LOW;
+            if(currentState == poseControlState.HIGH)
+            {
+                jerkTimer.reset();
+                while(jerkTimer.time() < 0.5) {
+                    flpPosTarget = -1800;
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+                }
 
-            jerkTimer.reset();
-            while (jerkTimer.time() < 0.5) {
-                extTarget = 0;
-                flpTarget = -250;
-                wristServo.setPosition(0); //0.8
-                spinnerServo.setPosition(0.1522);
-                flpCONTROLLER();
-                extCONTROLLER();
+                extTarget = 440;
+                jerkTimer.reset();
+                while(jerkTimer.time() < 0.5) {
+                    extCONTROLLER();
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+                }
+
+                spinnerServo.setPosition(0.215);
+                wristServo.setPosition(0.7989);
+                jerkTimer.reset();
+                while(jerkTimer.time() < 0.5) {
+                    flpPosTarget = -1160;
+                    extCONTROLLER();
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+                }
             }
-        }*/
+            else if(flpPosTarget>-2000) {
+                extTarget = 440;
+                spinnerServo.setPosition(0.215);
+                wristServo.setPosition(0.7989);
+                jerkTimer.reset();
+                while(jerkTimer.time() < 0.5) {
+                    flpPosTarget = -1160;
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+                }
+            }
+            else {
+                jerkTimer.reset();
+                while(jerkTimer.time() < 0.5) {
+                    extTarget = 0;
+                    extCONTROLLER();
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+                }
+                armMotor.setPower(0);
+
+                spinnerServo.setPosition(0.215);
+                wristServo.setPosition(0.7989);
+                jerkTimer.reset();
+                while(jerkTimer.time() < 0.5) {
+                    flpPosTarget = -1160;
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+                }
+                jerkTimer.reset();
+                while(jerkTimer.time() < 0.5) {
+                    extTarget = 440;
+                    extCONTROLLER();
+                    flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+
+                }
+            }
+            telemetry.addLine("TO LOW POSITION");
+            currentState = poseControlState.LOW;
+        }
+        //endregion
+
+        //region HOME POSITION
+        if(currentState!= poseControlState.HOME && currG2.a && !oldG2.a)
+        {
+            telemetry.addLine("TO HOME POSITION");
+            currentState = poseControlState.HOME;
+            jerkTimer.reset();
+            while(armMotor.getCurrentPosition()>60) {
+                extTarget = 0;
+                extCONTROLLER();
+                flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+            }
+            armMotor.setPower(0);
+
+            wristServo.setPosition(0.39);
+            spinnerServo.setPosition(0.26);
+            jerkTimer.reset();
+            while(jerkTimer.time() < 0.5) {
+                flpPosTarget = -200;
+                flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
+            }
+            armMotor.setPower(0);
+        }
         //endregion
 
         //region PICKUP POSITION
