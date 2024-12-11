@@ -56,8 +56,8 @@ public class OrientationDetector extends OpenCvPipeline {
     pointVector xLine, yLine, zLine;
     double centerLineOffset = 0;
     double recordArea;
-    boolean measureAgain = true;
-    boolean foundGoodPic = false;
+    boolean measureAgain = false;
+    boolean foundGoodPic = true;
     @Override
     public Mat processFrame(Mat input) {
         if(!foundGoodPic && measureAgain)
