@@ -47,14 +47,17 @@ public class DetectorRunner extends LinearOpMode {
 
         sleep(20);
 
-        telemetry.addData("Max Area", redDetector.recordArea);
-
-        while(true)
+        redDetector.takePicture();
+        while(!redDetector.doneFilming())
         {
-            redDetector.takePicture();
+            String printout = redDetector.getArea();
+            telemetry.addLine(printout);
+            if(printout != null)
+            {
+                telemetry.update();
+            }
         }
-
-        //waitForStart();
+        waitForStart();
 
         // region MOTORS AND SERVOS INIT STUFF
         // NewMecanumDrive drive = new NewMecanumDrive(hardwareMap);

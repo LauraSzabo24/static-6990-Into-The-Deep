@@ -335,13 +335,13 @@ public class RedTele extends LinearOpMode {
         //endregion
 
         //region EXTENDER
-        if(gamepad2.dpad_up && extTarget<=1600)
+        if(gamepad2.dpad_up && extTarget<=1800) //1600
         {
             telemetry.addLine("ext UP");
             currentState = poseControlState.FREE;
-            if(extTarget+extAddition>=1600-extAddition)
+            if(extTarget+extAddition>=1800-extAddition)
             {
-                extTarget+=Math.abs(Math.abs(extTarget)-1600);
+                extTarget+=Math.abs(Math.abs(extTarget)-1800);
             }
             else {
                 extTarget+=extAddition;
@@ -399,8 +399,8 @@ public class RedTele extends LinearOpMode {
             currentState = poseControlState.HIGH;
             if(flpPosTarget>-2000) {
                 extTarget = 1600;
-                spinnerServo.setPosition(0.215);
-                wristServo.setPosition(0.8194);
+                spinnerServo.setPosition(0.77);
+                wristServo.setPosition(0.8389);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
                     flpPosTarget = -1650;
@@ -416,8 +416,8 @@ public class RedTele extends LinearOpMode {
                 }
                 armMotor.setPower(0);
 
-                spinnerServo.setPosition(0.215);
-                wristServo.setPosition(0.8194);
+                spinnerServo.setPosition(0.77);
+                wristServo.setPosition(0.8389);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
                     flpPosTarget = -1650;
@@ -435,7 +435,7 @@ public class RedTele extends LinearOpMode {
         //endregion
 
         //region LOW POSITION
-        if(currentState!= poseControlState.LOW && currG2.right_bumper && !oldG2.right_bumper)
+        if(currentState!= poseControlState.LOW && currG2.left_bumper && !oldG2.left_bumper)
         {
             if(currentState == poseControlState.HIGH)
             {
@@ -452,7 +452,7 @@ public class RedTele extends LinearOpMode {
                     flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
                 }
 
-                spinnerServo.setPosition(0.215);
+                spinnerServo.setPosition(0.77);
                 wristServo.setPosition(0.7989);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
@@ -463,7 +463,7 @@ public class RedTele extends LinearOpMode {
             }
             else if(flpPosTarget>-2000) {
                 extTarget = 440;
-                spinnerServo.setPosition(0.215);
+                spinnerServo.setPosition(0.77);
                 wristServo.setPosition(0.7989);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
@@ -480,7 +480,7 @@ public class RedTele extends LinearOpMode {
                 }
                 armMotor.setPower(0);
 
-                spinnerServo.setPosition(0.215);
+                spinnerServo.setPosition(0.77);
                 wristServo.setPosition(0.7989);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
@@ -501,7 +501,7 @@ public class RedTele extends LinearOpMode {
         //endregion
 
         //region HOME POSITION
-        if(currentState!= poseControlState.HOME && currG2.a && !oldG2.a)
+        if(currentState!= poseControlState.HOME && currG2.x && !oldG2.x)
         {
             telemetry.addLine("TO HOME POSITION");
             currentState = poseControlState.HOME;
@@ -525,50 +525,38 @@ public class RedTele extends LinearOpMode {
         //endregion
 
         //region PICKUP POSITION
-        /*else if(gameModeB!= controlStateB.PICKUP && currG2.a && !oldG2.a)
-        {
-            divider = 4;
+        if(currentState!= poseControlState.PICKUP && currG2.a && !oldG2.a) {
+            telemetry.addLine("TO PICKUP POSITION");
+            currentState = poseControlState.PICKUP;
             jerkTimer.reset();
-            while(jerkTimer.time() < 1.0) {
+            while(jerkTimer.time() < 0.5) {
                 extTarget = 0;
                 extCONTROLLER();
+                flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
             }
-            clawServo.setPosition(0.6);
-
-            if(!pickupTwo) {
-                telemetry.addLine("PICKUP LOW");
-                wristServo.setPosition(0.2);//0.8
-                pickupTwo = true;
+            armMotor.setPower(0);
+            spinnerServo.setPosition(0.215);
+            wristServo.setPosition(0.595);
+            jerkTimer.reset();
+            while (jerkTimer.time() < 0.5) {
+                flpPosTarget = -3671;
+                flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
             }
-            else if( gameModeB != controlStateB.PICKUP) {
-                telemetry.addLine("PICKUP HANG");
-                wristServo.setPosition(0.0556); //0.822
-                pickupTwo = false;
-            }
-            gameModeB = controlStateB.PICKUP;
-            spinnerServo.setPosition(0.1522);
-            flpTarget = -1500;
-            clawServo.setPosition(0.6);
-        }*/
+        }
         //endregion
 
         //region JERK
-        /*if(currG2.right_bumper && !oldG2.right_bumper)
-        {
-            divider = 4;
+        if( flipMotor.getCurrentPosition()>-2000 && currG2.right_bumper && !oldG2.right_bumper) {
+            spinnerServo.setPosition(0.77);
+            wristServo.setPosition(0.95);
             jerkTimer.reset();
-            wristServo.setPosition(0.8);//0.2
-            flpTarget = -600;
-
-            jerkTimer.reset();
-            while(jerkTimer.time() < 1.0)
-            {
-                flpCONTROLLER();
+            while (jerkTimer.time() < 0.6) {
+                extTarget = 1140;
+                extCONTROLLER();
+                flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
             }
-            wristServo.setPosition(0.555); //0.2444
-            clawServo.setPosition(0.6);
+            clawServo.setPosition(0);
         }
-        divider = 1;*/
         //endregion
     }
 

@@ -19,6 +19,7 @@ import java.util.List;
 public class OrientationDetector extends OpenCvPipeline {
     Telemetry telemetry;
     Mat mat = new Mat();
+    Mat goodDetection;
     public OrientationDetector(Telemetry t) { telemetry = t; }
 
     //region FOR REFERENCE
@@ -56,11 +57,12 @@ public class OrientationDetector extends OpenCvPipeline {
     pointVector xLine, yLine, zLine;
     double centerLineOffset = 0;
     double recordArea;
-    boolean measureAgain = false;
+    String printable;
+    boolean foundError = false;
     boolean foundGoodPic = true;
     @Override
     public Mat processFrame(Mat input) {
-        if(!foundGoodPic && measureAgain)
+        if(!foundGoodPic)
         {
             //region GET COLORS
             Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGB2HSV);
@@ -97,187 +99,202 @@ public class OrientationDetector extends OpenCvPipeline {
                     recordMat = cont;
                 }
             }
+
             List<MatOfPoint> recordMatList = new ArrayList<>();
-            recordMatList.add(recordMat);
-            Mat contourImage = new Mat(canMat.size(), CvType.CV_8UC3, new Scalar(0, 0, 0)); // Create a black image
-            Imgproc.drawContours(contourImage, recordMatList, -1, new Scalar(255, 255, 255), 1);
-            //endregion
-
-
-            if (!contours.isEmpty() && recordMatList.get(0).toList().size() > 10 && measureAgain && !foundGoodPic) {
-                //region IMPORTANT POINTS
-                Point lowest = new Point();
-                double lowRecord = 0;
-                Point highest = new Point();
-                double highRecord = Integer.MAX_VALUE;
-
-                int startCol = 0;
-                int startRow = 0;
-                int rowCounter = 0;
-                Point highStart = new Point();
-                Point lowStart = new Point();
-
-                int endCol = 0;
-                Point highEnd = new Point();
-                Point lowEnd = new Point();
-
-                Point startHighAnchor = new Point();
-                Point startLowAnchor = new Point();
-                //endregion
-
-                //region GET GENERAL HIGHEST AND LOWEST POINTS
-                List<Point> pts = new ArrayList<>();
-                List<Point> lowPoints = new ArrayList<>();
-                List<Point> highPoints = new ArrayList<>();
-                for (int c = 0; c < contourImage.cols(); c++) {
-                    for (int r = 0; r < contourImage.rows(); r++) {
-                        if (contourImage.get(r, c)[0] == 255 && contourImage.get(r, c)[1] == 255 && contourImage.get(r, c)[2] == 255) {
-                            //region START COLUMN SHENANIGANS
-                            if (startCol == 0) {
-                                startCol = c;
-                                startRow = r;
-                            } else if (Math.abs(startCol - c) == 3 && rowCounter == 0) {
-                                startHighAnchor = new Point(c, r);
-                                rowCounter++;
-                            } else if (Math.abs(startCol - c) == 3 && rowCounter == 1) {
-                                startLowAnchor = new Point(c, r);
-                                rowCounter++;
-                            }
-                            //endregion
-
-                            if (r > lowRecord) {
-                                lowRecord = r;
-                                lowest = new Point(c, r);
-                                if (Math.abs(startCol - c) < 20 && Math.abs(startCol - c) > 6) {
-                                    lowPoints.add(lowest);
-                                }
-                            }
-                            if (r < highRecord) {
-                                highRecord = r;
-                                highest = new Point(c, r);
-                                if (Math.abs(startCol - c) < 15) {
-                                    highPoints.add(highest);
-                                }
-                            }
-                        }
-                    }
-                }
-                //endregion
-
-                //region FIND LOWEST AND HIGHEST POINTS
-                double recordAngl = -1;
-                lowStart = lowPoints.get(0);
-                for (int i = 0; i < lowPoints.size() - 3; i++) {
-                    double currAngl = Math.abs(angleBtwn(lowPoints.get(i), lowPoints.get(i + 3)));
-                    if (currAngl > recordAngl) {
-                        lowStart = lowPoints.get(i);
-                        recordAngl = currAngl;
-                    }
-                }
-
-                highStart = new Point(startCol, startRow);
-                //double recordAnglDiff = Math.abs(angleBtwn(highStart, startLowAnchor) - angleBtwn(highStart, startHighAnchor));
-                double recordAnglDiff = 30; //otherwise always choose high start
-                for (int i = 3; i < highPoints.size() - 3; i++) {
-                    double currForAngl = Math.abs(angleBtwn(highPoints.get(i), highPoints.get(i + 3)));
-                    double currBackAngle = Math.abs(angleBtwn(highPoints.get(i), highPoints.get(i - 3)));
-                    double currAnglDiff = Math.abs(currBackAngle - currForAngl);
-                    if (currAnglDiff > recordAnglDiff) {
-                        highStart = highPoints.get(i);
-                        recordAnglDiff = currAnglDiff;
-                    }
-                }
-                //endregion
-
-                //region GET END POINTS
-                lowRecord = 0;
-                highRecord = Integer.MAX_VALUE;
-                boolean found = false;
-                for (int c = contourImage.cols() - 1; c > 0; c--) {
-                    for (int r = contourImage.rows() - 1; r > 0; r--) {
-                        if (contourImage.get(r, c)[0] == 255 && contourImage.get(r, c)[1] == 255 && contourImage.get(r, c)[2] == 255) {
-                            if (endCol == 0) {
-                                endCol = c;
-                            }
-
-                            if (r > lowRecord) {
-                                lowRecord = r;
-                                if (Math.abs(endCol - c) < 15) {
-                                    lowEnd = new Point(c, r);
-                                    found = true;
-                                }
-                            }
-                            if (r < highRecord) {
-                                highRecord = r;
-                                if (Math.abs(endCol - c) < 3) {
-                                    highEnd = new Point(c, r);
-                                }
-                            }
-                        }
-                    }
-                }
-                //endregion
-
-                //region CHECK SIDES AND REMEASURE
-                double xside = distance(lowStart, lowest);
-                double yside = distance(highStart, highest);
-                double zside = distance(highStart, lowStart);
-                double aside = distance(lowest, lowEnd);
-                double bside = distance(highest, highEnd);
-                double cside = distance(highEnd, lowEnd);
-
-                //check if need new picture
-                if (Math.abs(yside - aside) > 5) {
-                    measureAgain = true;
-                }
-
-                //see if zx or cb is better
-                if (!measureAgain) {
-                    double constantZRatio = 10;
-                    double zxRatioOffset = Math.abs((zside / xside) - constantZRatio);
-                    double cbRatioOffset = Math.abs((cside / bside) - constantZRatio);
-
-                    if (zxRatioOffset < cbRatioOffset && zxRatioOffset > 5) // use z and x
-                    {
-                        foundGoodPic = true;
-                        xLine = new pointVector(lowStart, lowest, xside);
-                        yLine = new pointVector(highStart, highest, yside);
-                        zLine = new pointVector(highStart, lowStart, zside);
-                    } else if (cbRatioOffset > 5)  //use c and b
-                    {
-                        foundGoodPic = true;
-                        xLine = new pointVector(highest, highEnd, bside);
-                        yLine = new pointVector(highEnd, lowEnd, cside);
-                        zLine = new pointVector(lowest, lowEnd, aside);
-                    } else {
-                        measureAgain = true;
-                    }
-                }
-                //endregion
-
-                //region DRAW VECTORS
-                if (!measureAgain && foundGoodPic) {
-                    pts.add(lowest);
-                    pts.add(highest);
-                    pts.add(highStart);
-                    pts.add(lowStart);
-                    pts.add(highEnd);
-                    pts.add(lowEnd);
-                    Imgproc.drawMarker(contourImage, pts.get(0), new Scalar((int) (255), (int) (0), (int) (0))); //lowest-red
-                    Imgproc.drawMarker(contourImage, pts.get(1), new Scalar((int) (255), (int) (100), (int) (100))); //highest-brown
-                    Imgproc.drawMarker(contourImage, pts.get(2), new Scalar((int) (0), (int) (255), (int) (0)));  //highStart-green
-                    Imgproc.drawMarker(contourImage, pts.get(3), new Scalar((int) (255), (int) (255), (int) (0)));  //lowStart-yellow
-                    Imgproc.drawMarker(contourImage, pts.get(4), new Scalar((int) (0), (int) (0), (int) (255)));  //highEnd-blue
-                    Imgproc.drawMarker(contourImage, pts.get(5), new Scalar((int) (255), (int) (0), (int) (255)));  //lowEnd-purple
-                    //Imgproc.line(contourImage, filtered.get(filtered.size() - 1), filtered.get(0), new Scalar((int) (255), (int) (0), (int) (0)), 3);
-                    measureAgain = true;
-                    foundGoodPic = false;
-                }
-                //endregion
+            if (recordMat.empty()) {
+                foundError = true;
             }
-            return contourImage;
+            //endregion
+            else {
+                recordMatList.add(recordMat);
+                Mat contourImage = new Mat(canMat.size(), CvType.CV_8UC3, new Scalar(0, 0, 0)); // Create a black image
+                Imgproc.drawContours(contourImage, recordMatList, -1, new Scalar(255, 255, 255), 1);
+
+                if (!foundError && !contours.isEmpty() && recordMatList.get(0).toList().size() > 10) {
+                    //region IMPORTANT POINTS
+                    Point lowest = new Point();
+                    double lowRecord = 0;
+                    Point highest = new Point();
+                    double highRecord = Integer.MAX_VALUE;
+
+                    int startCol = 0;
+                    int startRow = 0;
+                    int rowCounter = 0;
+                    Point highStart = new Point();
+                    Point lowStart = new Point();
+
+                    int endCol = 0;
+                    Point highEnd = new Point();
+                    Point lowEnd = new Point();
+
+                    Point startHighAnchor = new Point();
+                    Point startLowAnchor = new Point();
+                    //endregion
+
+                    //region GET GENERAL HIGHEST AND LOWEST POINTS
+                    List<Point> pts = new ArrayList<>();
+                    List<Point> lowPoints = new ArrayList<>();
+                    List<Point> highPoints = new ArrayList<>();
+                    for (int c = 0; c < contourImage.cols(); c++) {
+                        for (int r = 0; r < contourImage.rows(); r++) {
+                            if (contourImage.get(r, c)[0] == 255 && contourImage.get(r, c)[1] == 255 && contourImage.get(r, c)[2] == 255) {
+                                //region START COLUMN SHENANIGANS
+                                if (startCol == 0) {
+                                    startCol = c;
+                                    startRow = r;
+                                } else if (Math.abs(startCol - c) == 3 && rowCounter == 0) {
+                                    startHighAnchor = new Point(c, r);
+                                    rowCounter++;
+                                } else if (Math.abs(startCol - c) == 3 && rowCounter == 1) {
+                                    startLowAnchor = new Point(c, r);
+                                    rowCounter++;
+                                }
+                                //endregion
+
+                                if (r > lowRecord) {
+                                    lowRecord = r;
+                                    lowest = new Point(c, r);
+                                    if (Math.abs(startCol - c) < 20 && Math.abs(startCol - c) > 6) {
+                                        lowPoints.add(lowest);
+                                    }
+                                }
+                                if (r < highRecord) {
+                                    highRecord = r;
+                                    highest = new Point(c, r);
+                                    if (Math.abs(startCol - c) < 15) {
+                                        highPoints.add(highest);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //endregion
+
+                    //region FIND LOWEST AND HIGHEST POINTS
+                    double recordAngl = -1;
+                    if (lowPoints.isEmpty()) {
+                        lowStart = new Point(startCol, startRow);
+                    } else {
+                        lowStart = lowPoints.get(0);
+                    }
+
+                    for (int i = 0; i < lowPoints.size() - 3; i++) {
+                        double currAngl = Math.abs(angleBtwn(lowPoints.get(i), lowPoints.get(i + 3)));
+                        if (currAngl > recordAngl) {
+                            lowStart = lowPoints.get(i);
+                            recordAngl = currAngl;
+                        }
+                    }
+
+                    highStart = new Point(startCol, startRow);
+                    //double recordAnglDiff = Math.abs(angleBtwn(highStart, startLowAnchor) - angleBtwn(highStart, startHighAnchor));
+                    double recordAnglDiff = 30; //otherwise always choose high start
+                    for (int i = 3; i < highPoints.size() - 3; i++) {
+                        double currForAngl = Math.abs(angleBtwn(highPoints.get(i), highPoints.get(i + 3)));
+                        double currBackAngle = Math.abs(angleBtwn(highPoints.get(i), highPoints.get(i - 3)));
+                        double currAnglDiff = Math.abs(currBackAngle - currForAngl);
+                        if (currAnglDiff > recordAnglDiff) {
+                            highStart = highPoints.get(i);
+                            recordAnglDiff = currAnglDiff;
+                        }
+                    }
+                    //endregion
+
+                    //region GET END POINTS
+                    lowRecord = 0;
+                    highRecord = Integer.MAX_VALUE;
+                    boolean found = false;
+                    for (int c = contourImage.cols() - 1; c > 0; c--) {
+                        for (int r = contourImage.rows() - 1; r > 0; r--) {
+                            if (contourImage.get(r, c)[0] == 255 && contourImage.get(r, c)[1] == 255 && contourImage.get(r, c)[2] == 255) {
+                                if (endCol == 0) {
+                                    endCol = c;
+                                }
+
+                                if (r > lowRecord) {
+                                    lowRecord = r;
+                                    if (Math.abs(endCol - c) < 15) {
+                                        lowEnd = new Point(c, r);
+                                        found = true;
+                                    }
+                                }
+                                if (r < highRecord) {
+                                    highRecord = r;
+                                    if (Math.abs(endCol - c) < 3) {
+                                        highEnd = new Point(c, r);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //endregion
+
+                    //region CHECK SIDES AND REMEASURE
+                    double xside = distance(lowStart, lowest);
+                    double yside = distance(highStart, highest);
+                    double zside = distance(highStart, lowStart);
+                    double aside = distance(lowest, lowEnd);
+                    double bside = distance(highest, highEnd);
+                    double cside = distance(highEnd, lowEnd);
+
+                    //check if need new picture
+                    double yadiff = Math.abs(yside - aside);
+                    printable = "BADDDDD yside = " + yside + " aside = " + aside + " difference = " + Math.abs(yside - aside);
+                    if (yadiff > 0 && yadiff < 100) { //works except purple star in bad spot when short side
+                        printable = "GOOOOD yside = " + yside + " aside = " + aside + " difference = " + Math.abs(yside - aside);
+                    } else {
+                        foundError = true;
+                    }
+
+                    //see if zx or cb is better
+                    if (!foundError) {
+                        double constantZRatio = 10;
+                        double zxRatioOffset = Math.abs((zside / xside) - constantZRatio);
+                        double cbRatioOffset = Math.abs((cside / bside) - constantZRatio);
+
+                        printable = "BADDD zxratiooffset " + zxRatioOffset + " cbratiooffset = " + cbRatioOffset;
+                        if (zxRatioOffset < cbRatioOffset && zxRatioOffset > 5) // use z and x
+                        {
+                            printable = "USE ZX zxratiooffset " + zxRatioOffset + " cbratiooffset = " + cbRatioOffset;
+                            foundGoodPic = true;
+                            xLine = new pointVector(lowStart, lowest, xside);
+                            yLine = new pointVector(highStart, highest, yside);
+                            zLine = new pointVector(highStart, lowStart, zside);
+                        } else if (cbRatioOffset > 5)  //use c and b
+                        {
+                            foundGoodPic = true;
+                            printable = "USE CB zxratiooffset " + zxRatioOffset + " cbratiooffset = " + cbRatioOffset;
+                            xLine = new pointVector(highest, highEnd, bside);
+                            yLine = new pointVector(highEnd, lowEnd, cside);
+                            zLine = new pointVector(lowest, lowEnd, aside);
+                        }
+                    }
+                    //endregion
+
+                    //region DRAW VECTORS
+                    if (!foundError) {
+                        pts.add(lowest);
+                        pts.add(highest);
+                        pts.add(highStart);
+                        pts.add(lowStart);
+                        pts.add(highEnd);
+                        pts.add(lowEnd);
+                        Imgproc.drawMarker(contourImage, pts.get(0), new Scalar((int) (255), (int) (0), (int) (0))); //lowest-red
+                        Imgproc.drawMarker(contourImage, pts.get(1), new Scalar((int) (255), (int) (100), (int) (100))); //highest-brown
+                        Imgproc.drawMarker(contourImage, pts.get(2), new Scalar((int) (0), (int) (255), (int) (0)));  //highStart-green
+                        Imgproc.drawMarker(contourImage, pts.get(3), new Scalar((int) (255), (int) (255), (int) (0)));  //lowStart-yellow
+                        Imgproc.drawMarker(contourImage, pts.get(4), new Scalar((int) (0), (int) (0), (int) (255)));  //highEnd-blue
+                        Imgproc.drawMarker(contourImage, pts.get(5), new Scalar((int) (255), (int) (0), (int) (255)));  //lowEnd-purple
+                        //Imgproc.line(contourImage, filtered.get(filtered.size() - 1), filtered.get(0), new Scalar((int) (255), (int) (0), (int) (0)), 3);
+                        goodDetection = contourImage;
+                        return goodDetection;
+                    }
+                    //endregion
+                }
+            }
+            return input;
         }
-        return mat;
+        return goodDetection;
     }
     public double angleBtwn(Point a, Point b)
     {
@@ -306,12 +323,17 @@ public class OrientationDetector extends OpenCvPipeline {
     {
         return centerLineOffset;
     }
-    public double getArea(){
-        return recordArea;
+    public String getArea(){
+        return printable;
+    }
+
+    public boolean doneFilming(){
+        return foundGoodPic;
     }
     public void takePicture()
     {
         foundGoodPic = false;
-        measureAgain = true;
+        foundError = false;
+        goodDetection = new Mat();
     }
 }
