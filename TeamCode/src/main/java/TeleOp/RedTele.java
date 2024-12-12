@@ -67,6 +67,8 @@ public class RedTele extends LinearOpMode {
     boolean pickupTwo = false;
     ElapsedTime jerkTimer = new ElapsedTime();
     boolean jerked = false;
+    double extLimit = 1600;
+    double flpLimit = 4300;
 
     int spinnerPos = 0;
     //endregion
@@ -97,6 +99,7 @@ public class RedTele extends LinearOpMode {
     speedControlState gameModeA;
     speedControlState gameModeB;
     poseControlState currentState;
+    boolean notNormalLimits = false;
 
     //endregion
 
@@ -150,9 +153,10 @@ public class RedTele extends LinearOpMode {
     {
         wristServo.setPosition(0.39);
         clawServo.setPosition(0.4);
-        spinnerServo.setPosition(0.26);
+        spinnerServo.setPosition(0.21);
         flpPosTarget = -200;
         extTarget = 0;
+        notNormalLimits = false;
     }
 
     //BASICS
@@ -166,6 +170,8 @@ public class RedTele extends LinearOpMode {
         currentState = poseControlState.FREE;
         gameModeA = speedControlState.NORMAL;
         gameModeB = speedControlState.NORMAL;
+        extLimit = 1600;
+        flpLimit = 4300;
 
         waitForStart();
 
@@ -223,6 +229,12 @@ public class RedTele extends LinearOpMode {
                 break;
         }
 
+        //FIELD CENTRIC RESET
+        if(currG1.right_bumper && !currG1.right_bumper && currG1.left_bumper && !currG1.left_bumper )
+        {
+            poseEstimate = new Pose2d(0, 0, 0);
+        }
+
         //FIELD CENTRIC
         poseEstimate = drive.getPoseEstimate();
         Vector2d input = new Vector2d(
@@ -240,28 +252,44 @@ public class RedTele extends LinearOpMode {
     }
     public void driverBControls()
     {
-        //region PRECISION AND SUPERSPEED MODE
-        gameModeB = speedControlState.NORMAL;
-        if (gamepad2.right_trigger > 0) {
+        //region EMERGENCY CONTROLS
+        if ((currG2.right_trigger > 0.3) && !(oldG2.right_trigger>0.3) && (!notNormalLimits)) {
             gameModeB = speedControlState.PRECISION;
+            notNormalLimits = true;
         }
-        if (gamepad2.left_trigger > 0) {
+        else if((currG2.right_trigger > 0.3) && !(oldG2.right_trigger>0.3))
+        {
+            notNormalLimits = false;
+            gameModeB = speedControlState.NORMAL;
+        }
+        if ((currG2.left_trigger > 0.3) && !(oldG2.left_trigger>0.3) && (!notNormalLimits))  {
             gameModeB = speedControlState.SUPERSPEED;
+            notNormalLimits = true;
         }
-        double flpAddition = 0;
-        double extAddition = 0;
-        switch(gameModeA){
+        else if((currG2.left_trigger > 0.3) && !(oldG2.left_trigger>0.3))
+        {
+            notNormalLimits = false;
+            gameModeB = speedControlState.NORMAL;
+        }
+
+        double flpAddition = 70;
+        double extAddition = 40;
+        switch(gameModeB){
             case NORMAL:
-                flpAddition = 70;
-                extAddition = 40;
+                extLimit = 1600;
+                flpLimit = 4300;
+                //flpAddition = 70;
+                //extAddition = 40;
                 break;
             case PRECISION:
-                flpAddition = 10;
-                extAddition = 10;
+                flpLimit = 8000;
+                //flpAddition = 10;
+                //extAddition = 10;
                 break;
             case SUPERSPEED:
-                flpAddition = 80;
-                extAddition = 60;
+                extLimit = 8000;
+                //flpAddition = 80;
+                //extAddition = 60;
                 break;
         }
         //endregion
@@ -322,36 +350,36 @@ public class RedTele extends LinearOpMode {
                     spinnerServo.setPosition(0);
                     break;
                 case 1:
-                    spinnerServo.setPosition(0.26);
+                    spinnerServo.setPosition(0.21);
                     break;
                 case 2:
-                    spinnerServo.setPosition(0.54);
+                    spinnerServo.setPosition(0.48);
                     break;
                 case 3:
-                    spinnerServo.setPosition(0.81);
+                    spinnerServo.setPosition(0.77);
                     break;
             }
         }
         //endregion
 
         //region EXTENDER
-        if(gamepad2.dpad_up && extTarget<=1800) //1600
+        if(gamepad2.dpad_up && extTarget<=extLimit)
         {
             telemetry.addLine("ext UP");
             currentState = poseControlState.FREE;
-            if(extTarget+extAddition>=1800-extAddition)
+            if(extTarget+extAddition>=extLimit-extAddition)
             {
-                extTarget+=Math.abs(Math.abs(extTarget)-1800);
+                extTarget+=Math.abs(Math.abs(extTarget)-extLimit);
             }
             else {
                 extTarget+=extAddition;
             }
         }
-        else if(gamepad2.dpad_down && extTarget>=0)
+        else if(gamepad2.dpad_down && extTarget>=250)
         {
             telemetry.addLine("ext DOWN");
             currentState = poseControlState.FREE;
-            if(extTarget-extAddition<=0)
+            if(extTarget-extAddition<=250)
             {
                 extTarget-=Math.abs(extTarget);
             }
@@ -375,14 +403,14 @@ public class RedTele extends LinearOpMode {
                 flpPosTarget+=flpAddition;
             }
         }
-        else if(gamepad2.dpad_left && flpPosTarget>=-4300)
+        else if(gamepad2.dpad_left && flpPosTarget>=-flpLimit)
         {
             telemetry.addLine("flp UP");
             currentState = poseControlState.FREE;
 
-            if(flpPosTarget-flpAddition<=-4300)
+            if(flpPosTarget-flpAddition<=-flpLimit)
             {
-                flpPosTarget-=Math.abs(flpPosTarget+4300);
+                flpPosTarget-=Math.abs(flpPosTarget+flpLimit);
             }
             else {
                 flpPosTarget-=flpAddition;
@@ -507,20 +535,19 @@ public class RedTele extends LinearOpMode {
             currentState = poseControlState.HOME;
             jerkTimer.reset();
             while(armMotor.getCurrentPosition()>60) {
-                extTarget = 0;
+                extTarget = 250;
                 extCONTROLLER();
                 flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
             }
-            armMotor.setPower(0);
 
             wristServo.setPosition(0.39);
-            spinnerServo.setPosition(0.26);
+            spinnerServo.setPosition(0.21);
+            clawServo.setPosition(0.4);
             jerkTimer.reset();
             while(jerkTimer.time() < 0.5) {
                 flpPosTarget = -200;
                 flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
             }
-            armMotor.setPower(0);
         }
         //endregion
 
@@ -530,7 +557,7 @@ public class RedTele extends LinearOpMode {
             currentState = poseControlState.PICKUP;
             jerkTimer.reset();
             while(jerkTimer.time() < 0.5) {
-                extTarget = 0;
+                extTarget = 250;
                 extCONTROLLER();
                 flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
             }
@@ -632,6 +659,7 @@ public class RedTele extends LinearOpMode {
             telemetry.addLine("CLAW OPEN");
         }
 
+        telemetry.addData("GAMEMODEB", gameModeB);
         telemetry.addData("flpVelocity ", flipMotor.getVelocity());
         telemetry.addData("flpPosition ", flipMotor.getCurrentPosition());
         telemetry.addData("flpTarget", flpPosTarget);
