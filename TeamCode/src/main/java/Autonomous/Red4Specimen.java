@@ -83,8 +83,27 @@ public class Red4Specimen extends OpMode {
 
         //region PRELOAD DROP OFF
         TrajectorySequence preload = drive.trajectorySequenceBuilder(startPose)
-                .splineToConstantHeading(new Vector2d(0, 20), Math.toRadians(90))
-                .addDisplacementMarker(1, this::highPosition)
+                .splineToConstantHeading(new Vector2d(-10, 29), Math.toRadians(90))
+                .addDisplacementMarker(1,() -> {
+                    extTarget = 1600;
+                    flpPosTarget = -1500;
+                })
+                .addDisplacementMarker(20,() -> {
+                    spinnerServo.setPosition(0.77);
+                    wristServo.setPosition(0.95);//0.8389
+                })
+                .addTemporalMarker(3,() -> {
+                    spinnerServo.setPosition(0.77);
+                    wristServo.setPosition(1);
+                    extTarget = 1140;
+                })
+                .addTemporalMarker(4,() -> {
+                    clawServo.setPosition(0);
+                })
+                .waitSeconds(2)
+                .forward(3)
+                //.splineToConstantHeading(new Vector2d(-20, 33), Math.toRadians(90))
+
                 .build();
         //endregion
 
@@ -253,13 +272,13 @@ public class Red4Specimen extends OpMode {
     }
     public void jerk()
     {
+        while (jerkTimer.time() < 3) {
+        }
         spinnerServo.setPosition(0.77);
         wristServo.setPosition(0.95);
+        extTarget = 1140;
         jerkTimer.reset();
         while (jerkTimer.time() < 0.6) {
-            extTarget = 1140;
-            extCONTROLLER();
-            flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
         }
         clawServo.setPosition(0);
     }
