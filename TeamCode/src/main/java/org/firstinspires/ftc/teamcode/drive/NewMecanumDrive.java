@@ -58,9 +58,9 @@ import Autonomous.Mailbox;
 @Config
 public class NewMecanumDrive extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(2, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(-4, 0, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(-8, 0, 0);
 
-    public static double LATERAL_MULTIPLIER = 1.4286;
+    public static double LATERAL_MULTIPLIER = 1.4286 * 1.0347;
 
     public static double VX_WEIGHT = 1;
     public static double VY_WEIGHT = 1;
@@ -333,5 +333,10 @@ public class NewMecanumDrive extends MecanumDrive {
 
     public static TrajectoryAccelerationConstraint getAccelerationConstraint(double maxAccel) {
         return new ProfileAccelerationConstraint(maxAccel);
+    }
+
+    public void secretSetHeading()
+    {
+        setPoseEstimate(new Pose2d(getPoseEstimate().getX(), getPoseEstimate().getY(), 0));
     }
 }

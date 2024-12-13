@@ -13,20 +13,19 @@ public class Mailbox
     {
         listMain = new ArrayList<Pose2d>();
     }
-    public void setAutoEnd(Pose2d end){
-        //currentPose = end;
-        //listMain.add(end);
+    public static void setAutoEnd(Pose2d end){
+        currentPose = end;
+        listMain.add(end);
     }
     public static ArrayList<Pose2d> getPoses()
     {
         return listMain;
     }
-    public void setAutoEndHead(double end)
+    public static void setAutoEndHead(double end)
     {
-        autoEndHead = 0;
-        //autoEndHead = end;
+        autoEndHead = end;
     }
-    public double getAutoEndHead()
+    public static double getAutoEndHead()
     {
         return autoEndHead;
     }
