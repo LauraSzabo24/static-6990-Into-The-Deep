@@ -192,12 +192,13 @@ public class NewMecanumDrive extends MecanumDrive {
         waitForIdle();
     }
 
-    public void followTrajectorySequenceAsync(TrajectorySequence trajectorySequence) {
+    public void followTrajectorySequenceAsync(TrajectorySequence trajectorySequence, Mailbox mail) {
         trajectorySequenceRunner.followTrajectorySequenceAsync(trajectorySequence);
+        superSecretAddition(mail, 0);
     }
 
     public void followTrajectorySequence(TrajectorySequence trajectorySequence, Mailbox mail) {
-        followTrajectorySequenceAsync(trajectorySequence);
+        followTrajectorySequenceAsync(trajectorySequence, mail);
         waitForIdle2(mail);
     }
 

@@ -8,6 +8,7 @@ import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -22,7 +23,7 @@ import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import TeleOp.RedTele;
 
 @Autonomous
-public class Red4Specimen extends LinearOpMode {
+public class Red4Specimen extends OpMode {
     //region FLIPPER CONTROLLER
     //POSITION
     ElapsedTime timer = new ElapsedTime();
@@ -51,6 +52,7 @@ public class Red4Specimen extends LinearOpMode {
     //region DRIVER A MATERIAL
     IMU imu;
     IMU.Parameters parameters;
+    Pose2d startPose;
     NewMecanumDrive drive;
     Pose2d poseEstimate;
     private double speed;
@@ -70,18 +72,19 @@ public class Red4Specimen extends LinearOpMode {
     int spinnerPos = 0;
     //endregion
     @Override
-    public void runOpMode() throws InterruptedException {
-        sleep(20);
+    public void init()
+    {
+        telemetry.setMsTransmissionInterval(50);
+        Mailbox mail = new Mailbox();
         hardwareInit();
         movementInitII();
-        Pose2d startPose = new Pose2d(0, 0, Math.toRadians(0));
+        startPose = new Pose2d(0, 0, Math.toRadians(90));
         drive.setPoseEstimate(startPose);
 
         //region PRELOAD DROP OFF
         TrajectorySequence preload = drive.trajectorySequenceBuilder(startPose)
-                .splineToConstantHeading(new Vector2d(0, 35), Math.toRadians(-90))
-                .forward(5)
-                .back(5)
+                .splineToConstantHeading(new Vector2d(0, 20), Math.toRadians(90))
+                .addDisplacementMarker(1, this::highPosition)
                 .build();
         //endregion
 
@@ -137,31 +140,31 @@ public class Red4Specimen extends LinearOpMode {
                 .build();
         //endregion
 
-        waitForStart();
-        telemetry.setMsTransmissionInterval(50);
-        if(isStopRequested()) return;
-        Mailbox mail = new Mailbox();
-
         //DRIVING
         drive.setPoseEstimate(startPose);
-        drive.followTrajectorySequence(preload, mail);
+        drive.followTrajectorySequenceAsync(preload, mail);
         mail.setAutoEnd((new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading() + Math.toRadians(-180))));
+    }
+    @Override
+    public void loop()  {
+        drive.update();
+        extCONTROLLER();
+        flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
     }
     public void highPosition()
     {
         telemetry.addLine("TO HIGH POSITION");
         if(flpPosTarget>-2000) {
             extTarget = 1600;
-            spinnerServo.setPosition(0.77);
-            wristServo.setPosition(0.8389);
+            flpPosTarget = -1650;
             jerkTimer.reset();
             while(jerkTimer.time() < 0.5) {
-                flpPosTarget = -1650;
-                flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
             }
+            spinnerServo.setPosition(0.77);
+            wristServo.setPosition(0.8389);
         }
         else {
-            jerkTimer.reset();
+            /*jerkTimer.reset();
             while(jerkTimer.time() < 0.5) {
                 extTarget = 0;
                 extCONTROLLER();
@@ -182,7 +185,7 @@ public class Red4Specimen extends LinearOpMode {
                 extCONTROLLER();
                 flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
 
-            }
+            }*/
         }
     }
     public void lowPosition()
