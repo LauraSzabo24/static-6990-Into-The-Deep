@@ -581,7 +581,7 @@ public class RedTele extends LinearOpMode {
             }
             armMotor.setPower(0);
             spinnerServo.setPosition(0.215);
-            wristServo.setPosition(0.595);
+            wristServo.setPosition(0.66);
             clawServo.setPosition(0);
             jerkTimer.reset();
             while (jerkTimer.time() < 0.5) {

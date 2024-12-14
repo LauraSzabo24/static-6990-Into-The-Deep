@@ -4,6 +4,10 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TranslationalVelocityConstraint;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -19,6 +23,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.drive.NewMecanumDrive;
 import org.firstinspires.ftc.teamcode.drive.Unused.DI_MecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
+
+import java.util.Arrays;
 
 import TeleOp.RedTele;
 
@@ -71,6 +77,7 @@ public class Red4Specimen extends OpMode {
 
     int spinnerPos = 0;
     //endregion
+    TrajectorySequence preload, connection, cycleOne, cycleTwo, cycleThree;
     @Override
     public void init()
     {
@@ -80,82 +87,96 @@ public class Red4Specimen extends OpMode {
         movementInitII();
         startPose = new Pose2d(0, 0, Math.toRadians(90));
         drive.setPoseEstimate(startPose);
+        TrajectoryVelocityConstraint slowConstraint = new MinVelocityConstraint(Arrays.asList(
+                new TranslationalVelocityConstraint(25),
+                new AngularVelocityConstraint(1)
+        ));
 
         //region PRELOAD DROP OFF
-        TrajectorySequence preload = drive.trajectorySequenceBuilder(startPose)
+        preload = drive.trajectorySequenceBuilder(startPose)
                 .splineToConstantHeading(new Vector2d(-10, 29), Math.toRadians(90))
                 .addDisplacementMarker(1,() -> {
                     extTarget = 1600;
-                    flpPosTarget = -1500;
+                    flpPosTarget = -1400;
                 })
                 .addDisplacementMarker(20,() -> {
                     spinnerServo.setPosition(0.77);
                     wristServo.setPosition(0.95);//0.8389
                 })
-                .addTemporalMarker(3,() -> {
+                .addTemporalMarker(2.5,() -> {
                     spinnerServo.setPosition(0.77);
                     wristServo.setPosition(1);
+                    flpPosTarget = -1300;
                     extTarget = 1140;
                 })
-                .addTemporalMarker(4,() -> {
+                .addTemporalMarker(3,() -> {
                     clawServo.setPosition(0);
                 })
                 .waitSeconds(2)
-                .forward(3)
-                //.splineToConstantHeading(new Vector2d(-20, 33), Math.toRadians(90))
-
+                .addTemporalMarker(3.5,() -> {drive.followTrajectorySequenceAsync(connection, mail);})
                 .build();
         //endregion
 
         //region CONNECTION
-        TrajectorySequence connection = drive.trajectorySequenceBuilder(startPose)
-                .splineToConstantHeading(new Vector2d(-36, 30), Math.toRadians(-90))
-                .forward(10)
-                .build();
-        //endregion
+        connection = drive.trajectorySequenceBuilder(preload.end())
+                .splineToConstantHeading(new Vector2d(-10, 20), Math.toRadians(90))
+                .setVelConstraint(slowConstraint)
+                .splineToConstantHeading(new Vector2d(15, 30), Math.toRadians(90))
+                .resetConstraints()
+                .splineToConstantHeading(new Vector2d(20, 40), Math.toRadians(90))
+                .splineToConstantHeading(new Vector2d(30, 52), Math.toRadians(90))
+                .setVelConstraint(slowConstraint)
+                .splineToConstantHeading(new Vector2d(30, 15), Math.toRadians(90))
 
-        //region INTO TERMINAL
-        TrajectorySequence terminalCycles = drive.trajectorySequenceBuilder(startPose)
-                .splineToConstantHeading(new Vector2d(-47, 10), Math.toRadians(-90))
-                .splineToConstantHeading(new Vector2d(-47, 55), Math.toRadians(-90))
+                .resetConstraints()
+                .splineToConstantHeading(new Vector2d(32, 40), Math.toRadians(90))
+                .setVelConstraint(slowConstraint)
+                .splineToConstantHeading(new Vector2d(39, 52), Math.toRadians(90))
+                .splineToConstantHeading(new Vector2d(39, 30), Math.toRadians(90))
+                .waitSeconds(2)
+                .splineToConstantHeading(new Vector2d(39, 15), Math.toRadians(90))
 
-                .splineToConstantHeading(new Vector2d(-58, 10), Math.toRadians(-90))
-                .splineToConstantHeading(new Vector2d(-58, 55), Math.toRadians(-90))
-
-                .splineToConstantHeading(new Vector2d(-65, 10), Math.toRadians(-90))
-                .splineToConstantHeading(new Vector2d(-65, 55), Math.toRadians(-90))
-
-                .splineToConstantHeading(new Vector2d(-55, 35), Math.toRadians(-90))
+                .addTemporalMarker(8,() -> {
+                    extTarget = 250;
+                    flpPosTarget = -3671;
+                    clawServo.setPosition(0);
+                })
+                .addTemporalMarker(8.5,() -> {
+                    spinnerServo.setPosition(0.215);
+                    wristServo.setPosition(0.66);
+                })
+                .addTemporalMarker(13,() -> {
+                    clawServo.setPosition(0.4);
+                })
+                .waitSeconds(2)
+                .addTemporalMarker(16,() -> {drive.followTrajectorySequenceAsync(cycleOne, mail);})
                 .build();
         //endregion
 
         //region CYCLE ONE
-        TrajectorySequence cycleOne = drive.trajectorySequenceBuilder(startPose)
-                .back(10)
-                .forward(10)
-                .splineToConstantHeading(new Vector2d(0, 35), Math.toRadians(-90))
+        cycleOne = drive.trajectorySequenceBuilder(connection.end())
+                .splineToConstantHeading(new Vector2d(-16, 32), Math.toRadians(90))
+                .addDisplacementMarker(1,() -> {
+                    extTarget = 1700;
+                    flpPosTarget = -1900;
+                })
+                .addDisplacementMarker(20,() -> {
+                    spinnerServo.setPosition(0.77);
+                    wristServo.setPosition(0.9);//0.8389
+                })
+                .addTemporalMarker(4,() -> {
+                    spinnerServo.setPosition(0.77);
+                    wristServo.setPosition(1);
+                    flpPosTarget = -1400;
+                    extTarget = 1140;
+                })
+                .addTemporalMarker(5,() -> {
+                    clawServo.setPosition(0);
+                })
                 .waitSeconds(2)
-                .lineTo(new Vector2d(-55, 40))
-                .back(10)
-                .forward(10)
-                .build();
-        //endregion
 
-        //region CYCLE TWO
-        TrajectorySequence cycleTwo = drive.trajectorySequenceBuilder(startPose)
-                .splineToConstantHeading(new Vector2d(0, 35), Math.toRadians(-90))
-                .waitSeconds(2)
-                .lineTo(new Vector2d(-55, 40))
-                .back(10)
-                .forward(10)
-                .build();
-        //endregion
-
-        //region CYCLE THREE
-        TrajectorySequence cycleThree = drive.trajectorySequenceBuilder(startPose)
-                .splineToConstantHeading(new Vector2d(0, 35), Math.toRadians(-90))
-                .forward(3)
-                .waitSeconds(2)
+                .splineToConstantHeading(new Vector2d(-10, 20), Math.toRadians(90))
+                .splineToConstantHeading(new Vector2d(39, 6), Math.toRadians(90))
                 .build();
         //endregion
 
@@ -262,7 +283,7 @@ public class Red4Specimen extends OpMode {
         }
         armMotor.setPower(0);
         spinnerServo.setPosition(0.215);
-        wristServo.setPosition(0.595);
+        wristServo.setPosition(0.66);
         clawServo.setPosition(0);
         jerkTimer.reset();
         while (jerkTimer.time() < 0.5) {
