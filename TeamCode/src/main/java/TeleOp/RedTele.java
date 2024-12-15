@@ -158,7 +158,7 @@ public class RedTele extends LinearOpMode {
     {
         wristServo.setPosition(0.39);
         clawServo.setPosition(0.4);
-        spinnerServo.setPosition(0.21);
+        spinnerServo.setPosition(0.21 + 0.1217 - 0.0528);
         flpPosTarget = -200;
     }
 
@@ -351,16 +351,16 @@ public class RedTele extends LinearOpMode {
             switch(spinnerPos)
             {
                 case 0:
-                    spinnerServo.setPosition(0);
+                    spinnerServo.setPosition(0 + 0.1217 - 0.0528);
                     break;
                 case 1:
-                    spinnerServo.setPosition(0.21);
+                    spinnerServo.setPosition(0.21 + 0.1217- 0.0528);
                     break;
                 case 2:
-                    spinnerServo.setPosition(0.48);
+                    spinnerServo.setPosition(0.48 + 0.1217- 0.0528);
                     break;
                 case 3:
-                    spinnerServo.setPosition(0.77);
+                    spinnerServo.setPosition(0.77 + 0.1217- 0.0528);
                     break;
             }
         }
@@ -431,7 +431,7 @@ public class RedTele extends LinearOpMode {
             currentState = poseControlState.HIGH;
             if(flpPosTarget>-2000) {
                 extTarget = 1600;
-                spinnerServo.setPosition(0.77);
+                spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
                 wristServo.setPosition(0.8389);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
@@ -450,7 +450,7 @@ public class RedTele extends LinearOpMode {
                 }
                 armMotor.setPower(0);
 
-                spinnerServo.setPosition(0.77);
+                spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
                 wristServo.setPosition(0.8389);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
@@ -490,7 +490,7 @@ public class RedTele extends LinearOpMode {
                     flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
                 }
 
-                spinnerServo.setPosition(0.77);
+                spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
                 wristServo.setPosition(0.7989);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
@@ -502,7 +502,7 @@ public class RedTele extends LinearOpMode {
             }
             else if(flpPosTarget>-2000) {
                 extTarget = 440;
-                spinnerServo.setPosition(0.77);
+                spinnerServo.setPosition(0.77 + 0.1217- 0.0528);
                 wristServo.setPosition(0.7989);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
@@ -521,7 +521,7 @@ public class RedTele extends LinearOpMode {
                 }
                 armMotor.setPower(0);
 
-                spinnerServo.setPosition(0.77);
+                spinnerServo.setPosition(0.77 + 0.1217- 0.0528);
                 wristServo.setPosition(0.7989);
                 jerkTimer.reset();
                 while(jerkTimer.time() < 0.5) {
@@ -557,7 +557,7 @@ public class RedTele extends LinearOpMode {
             }
 
             wristServo.setPosition(0.39);
-            spinnerServo.setPosition(0.21);
+            spinnerServo.setPosition(0.21 + 0.1217- 0.0528);
             clawServo.setPosition(0.4);
             jerkTimer.reset();
             while(jerkTimer.time() < 0.5) {
@@ -580,7 +580,7 @@ public class RedTele extends LinearOpMode {
                 flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
             }
             armMotor.setPower(0);
-            spinnerServo.setPosition(0.215);
+            spinnerServo.setPosition(0.215 + 0.1217- 0.0528);
             wristServo.setPosition(0.66);
             clawServo.setPosition(0);
             jerkTimer.reset();
@@ -594,7 +594,7 @@ public class RedTele extends LinearOpMode {
 
         //region JERK
         if( flipMotor.getCurrentPosition()>-2000 && currG2.right_bumper && !oldG2.right_bumper) {
-            spinnerServo.setPosition(0.77);
+            spinnerServo.setPosition(0.77 + 0.1217- 0.0528);
             wristServo.setPosition(0.95);
             jerkTimer.reset();
             while (jerkTimer.time() < 0.6) {
@@ -661,3 +661,5 @@ public class RedTele extends LinearOpMode {
         telemetry.addData("claw - ", clawServo.getPosition());
     }
 }
+
+//0.3317 0.2789

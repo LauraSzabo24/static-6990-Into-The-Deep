@@ -94,17 +94,17 @@ public class Red4Specimen extends OpMode {
 
         //region PRELOAD DROP OFF
         preload = drive.trajectorySequenceBuilder(startPose)
-                .splineToConstantHeading(new Vector2d(-10, 29), Math.toRadians(90))
+                .splineToConstantHeading(new Vector2d(-10, 26), Math.toRadians(90)) //29
                 .addDisplacementMarker(1,() -> {
                     extTarget = 1600;
                     flpPosTarget = -1400;
                 })
                 .addDisplacementMarker(20,() -> {
-                    spinnerServo.setPosition(0.77);
+                    spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
                     wristServo.setPosition(0.95);//0.8389
                 })
                 .addTemporalMarker(2.5,() -> {
-                    spinnerServo.setPosition(0.77);
+                    spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
                     wristServo.setPosition(1);
                     flpPosTarget = -1300;
                     extTarget = 1140;
@@ -134,22 +134,27 @@ public class Red4Specimen extends OpMode {
                 .splineToConstantHeading(new Vector2d(39, 52), Math.toRadians(90))
                 .splineToConstantHeading(new Vector2d(39, 30), Math.toRadians(90))
                 .waitSeconds(2)
-                .splineToConstantHeading(new Vector2d(39, 15), Math.toRadians(90))
+                .splineToConstantHeading(new Vector2d(39, 16), Math.toRadians(90))
 
                 .addTemporalMarker(8,() -> {
                     extTarget = 250;
-                    flpPosTarget = -3671;
+                    flpPosTarget = -3760; //3800
                     clawServo.setPosition(0);
                 })
                 .addTemporalMarker(8.5,() -> {
-                    spinnerServo.setPosition(0.215);
-                    wristServo.setPosition(0.66);
+                    spinnerServo.setPosition(0.20 + 0.1217 - 0.0528); //0.215
+                    wristServo.setPosition(0.6);
                 })
-                .addTemporalMarker(13,() -> {
+
+                .addTemporalMarker(12,() -> {
                     clawServo.setPosition(0.4);
                 })
-                .waitSeconds(2)
-                .addTemporalMarker(16,() -> {drive.followTrajectorySequenceAsync(cycleOne, mail);})
+                .addTemporalMarker(14,() -> {
+                    extTarget = 500;
+                    flpPosTarget = -3600;
+                })
+                .waitSeconds(3)
+                .addTemporalMarker(17,() -> {drive.followTrajectorySequenceAsync(cycleOne, mail);})
                 .build();
         //endregion
 
@@ -161,11 +166,11 @@ public class Red4Specimen extends OpMode {
                     flpPosTarget = -1900;
                 })
                 .addDisplacementMarker(20,() -> {
-                    spinnerServo.setPosition(0.77);
-                    wristServo.setPosition(0.9);//0.8389
+                    spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
+                    wristServo.setPosition(0.85);//0.8389
                 })
                 .addTemporalMarker(4,() -> {
-                    spinnerServo.setPosition(0.77);
+                    spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
                     wristServo.setPosition(1);
                     flpPosTarget = -1400;
                     extTarget = 1140;
@@ -177,6 +182,15 @@ public class Red4Specimen extends OpMode {
 
                 .splineToConstantHeading(new Vector2d(-10, 20), Math.toRadians(90))
                 .splineToConstantHeading(new Vector2d(39, 6), Math.toRadians(90))
+                .addTemporalMarker(8,() -> {
+                    extTarget = 0;
+                })
+                .addTemporalMarker(9,() -> {
+                    wristServo.setPosition(0.39);
+                    spinnerServo.setPosition(0.21 + 0.1217 - 0.0528);
+                    clawServo.setPosition(0.4);
+                    flpPosTarget = 0;
+                })
                 .build();
         //endregion
 
@@ -200,7 +214,7 @@ public class Red4Specimen extends OpMode {
             jerkTimer.reset();
             while(jerkTimer.time() < 0.5) {
             }
-            spinnerServo.setPosition(0.77);
+            spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
             wristServo.setPosition(0.8389);
         }
         else {
@@ -238,7 +252,7 @@ public class Red4Specimen extends OpMode {
         }
         armMotor.setPower(0);
 
-        spinnerServo.setPosition(0.77);
+        spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
         wristServo.setPosition(0.7989);
         jerkTimer.reset();
         while(jerkTimer.time() < 0.5) {
@@ -264,7 +278,7 @@ public class Red4Specimen extends OpMode {
         }
 
         wristServo.setPosition(0.39);
-        spinnerServo.setPosition(0.21);
+        spinnerServo.setPosition(0.21 + 0.1217 - 0.0528);
         clawServo.setPosition(0.4);
         jerkTimer.reset();
         while(jerkTimer.time() < 0.5) {
@@ -282,7 +296,7 @@ public class Red4Specimen extends OpMode {
             flpCONTROLLER(flpPosTarget, flipMotor.getCurrentPosition());
         }
         armMotor.setPower(0);
-        spinnerServo.setPosition(0.215);
+        spinnerServo.setPosition(0.215 + 0.1217 - 0.0528);
         wristServo.setPosition(0.66);
         clawServo.setPosition(0);
         jerkTimer.reset();
@@ -295,7 +309,7 @@ public class Red4Specimen extends OpMode {
     {
         while (jerkTimer.time() < 3) {
         }
-        spinnerServo.setPosition(0.77);
+        spinnerServo.setPosition(0.77 + 0.1217 - 0.0528);
         wristServo.setPosition(0.95);
         extTarget = 1140;
         jerkTimer.reset();
@@ -371,11 +385,16 @@ public class Red4Specimen extends OpMode {
     }
     public void movementInitII()
     {
-        wristServo.setPosition(0.39);
-        clawServo.setPosition(0.4);
-        spinnerServo.setPosition(0.21);
+        for(int i=0; i<15; i++)
+        {
+            spinnerServo.setPosition(0.21 + 0.1217 - 0.0528);
+            wristServo.setPosition(0.39);
+            clawServo.setPosition(0.4);
+        }
         flpPosTarget = -200;
         extTarget = 0;
     }
 
 }
+
+//0.21 0.3317  0.1217
