@@ -22,4 +22,4 @@ All important code files are found under TeamCode/src/main/java. Here there are 
     -RelicsFromCenterStageGame/TeleOp - These are from a previous season that I keep to use as reference. They can be ignored
 
 Thank you for visiting this repository!! I hope the way I have the files isn't too confusing or messy. All of the important files
-should have comments to help sort out the chaos. Have a nice day!!
+should have comments to help sort out the chaos. Have a nice day!! 
