@@ -1,4 +1,4 @@
-This is the 2024-2025 season's code for team 6990 Static Void's first robot "Plessi". 
+This is the 2024-2025 season's code for team 6990 Static Void's first robot "Plesiosaur" or "Plessie". 
 
 Credits:
 All code within this repository is from either the 2024-2025 FTC Roadrunner Quickstart, 
